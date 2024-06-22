@@ -25,6 +25,7 @@ def wrap():
     try:
         db = client["StudentInformationTest"]
         add_teacher("Dog", "Dogs", "Dogs2", db)
+        add_to_class("Dog", "Class One", "Student One", "report", db)
     except Exception as e:
         print(e)
     finally:
@@ -35,28 +36,46 @@ def add_teacher(teacher, username, pwd, db):
     new_teacher = db[teacher]
     insert_new = {"username": username, "pwd": pwd}
     new_teacher.insert_one(insert_new)
-    
+
+
+def add_to_class(teacher, class_name, student_name, report, db):
+    new_class = db[teacher][class_name]["students"]
+    insert_new = {student_name: report}
+    new_class.insert_one(insert_new)
+
+
 wrap()
 
 """
 {
-teacher1: {
-    class1: {
-        report: report,
-        students: {
-            student1: lfkjsflkjf,
-            student2: lksjflsdfkjd,
-            student3: lksdjfldkjsd
+teachers: {
+    teacher1: {
+        class1: {
+            report: report,
+            students: {
+                student1: lfkjsflkjf,
+                student2: lksjflsdfkjd,
+                student3: lksdjfldkjsd
+                }
+            }
+        class2: {
+            report: report,
+            students: {
+                student1: lfkjsflkjf,
+                student2: lksjflsdfkjd,
+                student3: lksdjfldkjsd
+                }
             }
         }
-    class2: {
-        report: report,
-        students: {
-            student1: lfkjsflkjf,
-            student2: lksjflsdfkjd,
-            student3: lksdjfldkjsd
-            }
-        }
+    },
+students: {
+    student1 username: {
+        name: sdkljf,
+        pwd: lskdjfg
+        },
+    student2 username: {
+        username: lskdjflk,
+        pwd: lksdjf}
     }
 }
 """
