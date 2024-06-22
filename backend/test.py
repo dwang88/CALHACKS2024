@@ -26,6 +26,7 @@ def wrap():
         db = client["StudentInformationTest"]
         add_teacher("Dog", "Dogs", "Dogs2", db)
         add_to_class("Dog", "Class One", "Student One", "report", db)
+        add_class_report("Dog", "Class One", "class report", db)
     except Exception as e:
         print(e)
     finally:
@@ -44,6 +45,12 @@ def add_to_class(teacher, class_name, student_name, report, db):
     new_class.insert_one(insert_new)
 
 
+def add_class_report(teacher, class_name, class_report, db):
+    insert = db[teacher][class_name]
+    insert_new = {"report": class_report}
+    insert.insert_one(insert_new)
+
+
 wrap()
 
 """
@@ -53,8 +60,8 @@ teachers: {
         class1: {
             report: report,
             students: {
-                student1: lfkjsflkjf,
-                student2: lksjflsdfkjd,
+                student1: report,
+                student2: report,
                 student3: lksdjfldkjsd
                 }
             }
