@@ -1,13 +1,13 @@
 import boto3
 import json
 
-bedrock = boto3.client(service_name="bedrock-runtime",region_name='us-east-1')
+bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
 modelId = "anthropic.claude-3-haiku-20240307-v1:0"
 
 accept = "application/json"
 contentType = "application/json"
-prompt = "What is life?"
+prompt = "what is the derivative of 3x^2. dont give me the answer just give step by step."
 
 response = bedrock.invoke_model(
     modelId=modelId,
