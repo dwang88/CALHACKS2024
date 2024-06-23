@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { SignInWithGoogle } from './firebaseConfig';
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
 
   return (
     <div className="App">
+      <SignInWithGoogle />
       <p>{message}</p>
     </div>
   );
