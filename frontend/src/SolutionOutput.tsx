@@ -20,13 +20,14 @@ const SolutionOutput: React.FC = () => {
     formData.append('pdf', pdfFile);
 
     try {
-      const response = await fetch('http://localhost:5000/process', {
+      const response = await fetch('http://localhost:8000/process', {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        alert("Failed to upload PDF. Please try again.");
+        const errorResponse = await response.json();
+        alert(`Failed to upload PDF: ${errorResponse.detail}`);
         return;
       }
 
