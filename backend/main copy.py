@@ -319,5 +319,47 @@ def generate_student_report():
     
     return jsonify(class_n['report'])
 
+@app.route('/generate_class_report', methods=['POST'])
+def generate_class_report():
+    data = request.get_json()
+    teacher_id = data["_id"]
+    class_name = data["class_name"]
+    classes = teachers_collection.find_one({"_id": ObjectId(teacher_id)})["classes"]
+    for class_n in classes:
+        if class_n["name"] == class_name:
+            break
+    categories_list = classes_collection.find_one({"class_name": class_name})["struggling"]
+    print("worked:", categories_list)
+
+    os.environ['AWS_ACCESS_KEY_ID'] = ""
+    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+    
+    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+
+    prompt = "Recombine the following list of categories by similarity in specific topic and regroup and remove duplicates. Return the resulting categories only, separated by commas, with no extra text.\n"
+    for i in categories_list:
+        prompt += (i + "\n")
+    
+    formatted_prompt = f'Human: {prompt}\nAssistant:'
+
+    response = bedrock.invoke_model(
+        modelId = "anthropic.claude-v2",
+        body=json.dumps({
+            "prompt": formatted_prompt,
+            "max_tokens_to_sample": 2048,
+            "temperature": 0.7
+            })
+    )
+
+    result = json.loads(response.get("body").read())
+    report = list(change_to_list(result["completion"]))
+    print(report)
+
+    classes_collection.update_one({"class_name": class_name}, {"$set": {"report": report}})
+
+    return jsonify(report)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
