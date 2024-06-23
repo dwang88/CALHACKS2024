@@ -3,7 +3,7 @@ import json
 from pypdf import PdfReader 
 
 # creating a pdf reader object 
-reader = PdfReader('mathhwk.pdf')  #replace with your pdf file
+reader = PdfReader('math.pdf')  #replace with your pdf file
 
 
 # printing number of pages in pdf file 
@@ -16,7 +16,6 @@ page = reader.pages[0]
 user_prompt = page.extract_text() 
 
 print(user_prompt)
-print("BREAKKKKKKKKKKKKKK")
 
 bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
