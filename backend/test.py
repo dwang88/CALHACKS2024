@@ -219,6 +219,7 @@ wrap()
 {
 teacher1: {
     class1: {
+        name: name,
         report: report,
         students: {
             student_name1: {
