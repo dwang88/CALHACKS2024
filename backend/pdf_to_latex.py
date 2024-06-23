@@ -1,26 +1,62 @@
-import fitz  # PyMuPDF
+import os
+import fitz 
+from PIL import Image
+import base64
+import openai
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 def pdf_to_images(pdf_path, output_folder):
-    # Open the PDF file
     pdf_document = fitz.open(pdf_path)
 
-    # Iterate through each page
     for page_num in range(len(pdf_document)):
-        # Select the page
         page = pdf_document.load_page(page_num)
 
-        # Render the page to a pixmap (image)
         pix = page.get_pixmap()
 
-        # Define the output image path
         output_image_path = f"{output_folder}/page_{page_num + 1}.png"
 
-        # Save the image
         pix.save(output_image_path)
 
     print(f"PDF has been successfully converted to images in the folder: {output_folder}")
 
-# Example usage
-pdf_path = "latex.pdf"  # Path to your PDF file
-output_folder = "output_images"  # Folder to save images
+pdf_path = "latex.pdf"  
+output_folder = "output_images"
 pdf_to_images(pdf_path, output_folder)
+
+def image_to_base64(image_path):
+    with open(image_path, 'rb') as img_file:
+        return base64.b64encode(img_file.read()).decode('utf-8')
+
+for image_name in os.listdir(output_folder):
+    image_path = os.path.join(output_folder, image_name)
+    if os.path.isfile(image_path) and image_name.lower().endswith(('png', 'jpg', 'jpeg')):
+        image_base64 = image_to_base64(image_path)
+
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What’s in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_base64}",
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=300,
+        )
+
+        print(f"Response for {image_name}:")
+        print(response.choices[0])
