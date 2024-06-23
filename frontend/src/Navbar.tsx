@@ -10,7 +10,7 @@ const Navbar: React.FC = () => {
           <Link to="/">React GPT</Link>
         </div>
         <ul className="nav-links">
-          <li><Link to="/contact">Placeholder 1</Link></li>
+          <li><Link to="/">Home</Link></li>
           <li><Link to="/features">Placeholder 2</Link></li>
           <li><Link to="/login">Login</Link></li>
         </ul>
