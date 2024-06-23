@@ -10,7 +10,10 @@
     "@types/node": "^16.18.101",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+<<<<<<< HEAD
     "cors": "^2.8.5",
+=======
+>>>>>>> 08ee20ab183d08007cb20a36c78d77aaa08d34af
     "firebase": "^10.12.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

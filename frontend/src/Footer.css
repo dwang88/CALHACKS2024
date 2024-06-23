@@ -1,0 +1,18 @@
+/* Footer.css */
+.footer {
+    background-color: #fff;
+    color: #232323;
+    text-align: center;
+    padding: 4rem 1rem;
+  }
+  
+  .footer .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .footer p {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
