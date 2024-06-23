@@ -5,7 +5,6 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import os
 import json
-import boto3
 
 app = Flask(__name__)
 CORS(app)
@@ -18,13 +17,9 @@ teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
 
-# helper method - change to list
-def change_to_list(string):
-    string_split = string.split(",")
-    while "" in string_split:
-        string_split.remove("")
-    for i in string_split:
-        yield i.strip()
+@app.route('/api/hello', methods=['GET'])
+def hello():
+    return jsonify(message="Hello from Flask!")
 
 @app.route('/api/hello', methods=['GET'])
 def hello():
@@ -146,93 +141,33 @@ def add_student_to_class():
 @app.route('/get_students', methods=['GET'])
 def get_students():
     try:
-        students = students_collection.find()
-
-        return jsonify({"message": "Got all students"}), 200
+        students = list(students_collection.find())
+        for student in students:
+            student['_id'] = str(student['_id'])
+        return jsonify(students), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# get all classes
+# Get all classes
 @app.route('/get_classes', methods=['GET'])
 def get_classes():
     try:
-        classes = classes_collection.find()
-
-        return jsonify({"message": "Got all classess"}), 200
+        classes = list(classes_collection.find())
+        for class_ in classes:
+            class_['_id'] = str(class_['_id'])
+        return jsonify(classes), 200
     except Exception as e:
-        return jsonify({"error":str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-# get all teachers
+
+# Get all teachers
 @app.route('/get_teachers', methods=['GET'])
 def get_teachers():
     try:
-        teachers = teachers_collection.find()
-
-        return jsonify({"Message":"got all teachers"})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-"""
-input:
-{
-    "class_id": {class_id}
-    "class_name": {class name - String}
-}
-"""
-@app.route('/get_students_by_class', methods=['GET'])
-def get_students_by_class():
-    try:
-        data = request.get_json()
-        class_id = ObjectId(data['class_id'])
-
-        class_name = classes_collection.find_one({"_id": class_id})
-        if not class_name:
-            return jsonify({"error":"class not found"}), 404
-        
-        students = class_name['students']
-        students_arr = []
-        for student in students:
-            student_id = ObjectId(student)
-            student = students_collection.find_one({"_id": student_id})
-            if student:
-                student['_id'] = str(student['_id'])
-                students_arr.append(student)
-
-        return jsonify({"Message": "Student successfully retrieved", "Students": students_arr})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    
-@app.route('/get_classes_for_student', methods=['GET'])
-def get_classes_for_student():
-    data = request.get_json()
-    student_id = ObjectId(data['student_id'])
-    classes = classes_collection.find()
-    list_classes = []
-    for c in classes:
-        students = c['students']
-        print(students)
-        print(student_id in students)
-        if(student_id in students):
-            c['_id'] = str(c['_id'])
-            c['students'] = [str(student) for student in c['students']]
-            list_classes.append(c)
-    return jsonify(list_classes)
-
-@app.route('/add_report', methods=['PATCH'])
-def add_report():
-    try:
-        data = request.get_json()
-        class_id = ObjectId(data['class_id'])
-        report = data['report']
-        target_class = classes_collection.update_one(
-            {"_id":class_id},
-            {"$push": {"reports": report}}
-        )
-
-        if target_class.modified_count == 0:
-            return jsonify({"error": "Class not found or report not added"}), 404
-
-        return jsonify({"message": "Report added successfully!"}), 200
+        teachers = list(teachers_collection.find())
+        for teacher in teachers:
+            teacher['_id'] = str(teacher['_id'])
+        return jsonify(teachers), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
