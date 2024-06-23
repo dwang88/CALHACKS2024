@@ -1,5 +1,22 @@
 import boto3
 import json
+from pypdf import PdfReader 
+
+# creating a pdf reader object 
+reader = PdfReader('mathhwk.pdf')  #replace with your pdf file
+
+
+# printing number of pages in pdf file 
+print(len(reader.pages)) 
+
+# getting a specific page from the pdf file 
+page = reader.pages[0] 
+
+# extracting text from page 
+user_prompt = page.extract_text() 
+
+print(user_prompt)
+print("BREAKKKKKKKKKKKKKK")
 
 bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
@@ -7,8 +24,8 @@ modelId = "anthropic.claude-3-haiku-20240307-v1:0"
 
 accept = "application/json"
 contentType = "application/json"
-system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer."
-user_prompt = "What is the derivative of 3x + 4?"
+system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. format your answer in latex"
+# user_prompt = "What is the derivative of 3x + 4?"
 
 response = bedrock.invoke_model(
     modelId=modelId,
