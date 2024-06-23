@@ -1,0 +1,34 @@
+/* Login.css */
+.login-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .login-page h2 {
+    margin-bottom: 1rem;
+    font-size: 2rem;
+    color: #fff;
+
+  }
+  
+  .login-page button {
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    margin: 1rem;
+  }
+  
+  .login-page button:hover {
+    background-color: #555;
+  }
+  

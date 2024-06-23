@@ -5,8 +5,9 @@
   }
   
   .features .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    margin-bottom: 200px;
   }
   
   .features h2 {
@@ -17,8 +18,10 @@
   .feature-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 2rem;
-    justify-content: center;
+    justify-content: center; /* Center items horizontally */
+    gap: 4rem; /* Adjust as needed for spacing between items */
+    margin: 0 auto; /* Center the entire flex container */
+    max-width: 1200px; /* Example: Set a max-width to limit the width of the centered content */
   }
   
   .feature {
@@ -27,6 +30,7 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     flex: 1;
     max-width: 300px;
+    border-radius: 25px;
   }
   
   .feature h3 {

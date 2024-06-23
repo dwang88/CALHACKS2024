@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Navbar from './Navbar';
 import Hero from './Hero';
 import Features from './Features';
 import Footer from './Footer';
-import { SignInWithGoogle } from './firebaseConfig';
+import Login from './Login';
+import SolutionOutput from './SolutionOutput';
 
 function App() {
   const [message, setMessage] = useState('');
@@ -25,12 +26,13 @@ function App() {
           <Route path="/" element={
             <>
               <Hero />
+              <Features />
+              <SolutionOutput /> {/* Add the SolutionOutput component here */}
               <Footer />
             </>
           } />
+          <Route path="/login" element={<Login />} />
         </Routes>
-        <SignInWithGoogle />
-        <p>{message}</p>
       </div>
     </Router>
   );

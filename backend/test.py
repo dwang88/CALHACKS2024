@@ -34,9 +34,9 @@ def wrap():
 
 
 @app.route('/add_teacher')
-def add_teacher(teacher, username, pwd, db):
-    new_teacher = db[teacher]
-    insert_new = {"username": username, "pwd": pwd}
+def add_teacher(teacher_name, teacher_id, email, db):
+    new_teacher = db[teacher_id]
+    insert_new = {"name": teacher_name, "email": email, "firebase id": teacher_id}
     new_teacher.insert_one(insert_new)
 
 
@@ -51,9 +51,12 @@ def add_class(teacher, class_name, db):
     insert_new = {"name": class_name, "struggling": [], "report": None}
     new_class.insert_one(insert_new)
 
+    # updated in main
+    # do we still want a list of courses under the teacher?
 
-def add_student_to_class(teacher, class_name, student_id, db, report=None):
-    new_class = db[teacher][class_name][student_id]
+
+def add_student_to_class(teacher_id, class_name, student_id, db, report=None):
+    new_class = db[teacher_id][class_name][student_id]
     a = db[student_id]
     b = a.find()
     c = list(b)[0]
@@ -63,15 +66,15 @@ def add_student_to_class(teacher, class_name, student_id, db, report=None):
     new_class.insert_one(insert_new)
 
 
-def add_class_report(teacher, class_name, class_report, db):
-    insert = db[teacher][class_name]
+def add_class_report(teacher_id, class_name, class_report, db):
+    insert = db[teacher_id][class_name]
     insert_new = {"report": class_report}
     insert.update_one({"name": class_name}, insert_new)
 
 
 @app.route('/student_exists/<student>')
-def student_exists(teacher, class_name, student, db):
-    collection = db[teacher][class_name][student]
+def student_exists(teacher_id, class_name, student_id, db):
+    collection = db[teacher_id][class_name][student_id]
     students = collection.find()
     students_found = list(students)
     students.close()
@@ -80,8 +83,8 @@ def student_exists(teacher, class_name, student, db):
     return False
 
 
-def get_class_total_categories(db, teacher, class_name):
-    observe = db[teacher][class_name]
+def get_class_total_categories(db, teacher_id, class_name):
+    observe = db[teacher_id][class_name]
     cursor = observe.find()
     data = list(cursor)[0]
     cursor.close()
@@ -97,7 +100,7 @@ def change_to_list(string):
 
 
 @app.route('/<student>/student_report')
-def generate_student_report(teacher, class_name, student, db, questions: list=None):
+def generate_student_report(teacher_id, class_name, student_id, db, questions: list=None):
     os.environ['AWS_ACCESS_KEY_ID'] = ""
     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
@@ -123,7 +126,7 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
     categories = list(change_to_list(categories))
 
     if categories:
-        class_update = db[teacher][class_name]
+        class_update = db[teacher_id][class_name]
 
         observe = class_update.find()
         old_data = list(observe)[0]
@@ -134,21 +137,21 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
         new = {"struggling": old + categories}
         class_update.update_one({"name": class_name}, {"$set": new})
 
-    if student_exists(teacher, class_name, student, db):
-        update_student(teacher, class_name, student, categories, db)
+    if student_exists(teacher_id, class_name, student_id, db):
+        update_student(teacher_id, class_name, student_id, categories, db)
     else:
-        add_student_to_class(teacher, class_name, student, categories, db)
+        add_student_to_class(teacher_id, class_name, student_id, categories, db)
 
 
-def update_student(teacher, class_name, student, report, db):
-    new_class = db[teacher][class_name][student]
+def update_student(teacher_id, class_name, student_id, report, db):
+    new_class = db[teacher_id][class_name][student_id]
     insert_new = {"report": report}
-    new_class.update_one({"name": student}, {'$set': insert_new})
+    new_class.update_one({"student id": student_id}, {'$set': insert_new})
 
 
 @app.route('/<student>/delete')
-def del_student(teacher, class_name, student, db):
-    removal = db[teacher][class_name][student]
+def del_student(teacher_id, class_name, student_id, db):
+    removal = db[teacher_id][class_name][student_id]
     cursor = removal.find()
     try:
         data = list(cursor)[0]["report"]
@@ -157,7 +160,7 @@ def del_student(teacher, class_name, student, db):
     finally:
         cursor.close()
     
-    class_select = db[teacher][class_name]
+    class_select = db[teacher_id][class_name]
 
     observe = class_select.find()
     old_data = list(observe)[0]
@@ -174,7 +177,7 @@ def del_student(teacher, class_name, student, db):
 
 
 @app.route('/class/class_report')
-def generate_class_report(teacher, class_name, db, categories: list=None):
+def generate_class_report(teacher_id, class_name, db, categories: list=None):
     os.environ['AWS_ACCESS_KEY_ID'] = ""
     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
@@ -203,7 +206,7 @@ def generate_class_report(teacher, class_name, db, categories: list=None):
     result = json.loads(response.get("body").read())
     print("result:", result)
 
-    update_collection = db[teacher][class_name]
+    update_collection = db[teacher_id][class_name]
     update_collection.update_one({"name": class_name}, {"$set": {"report": list(change_to_list(result["completion"]))}})
 
     # categories = result['completion']

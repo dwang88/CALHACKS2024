@@ -1,9 +1,9 @@
 /* Footer.css */
 .footer {
-    background-color: #333;
-    color: white;
+    background-color: #fff;
+    color: #232323;
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 4rem 1rem;
   }
   
   .footer .container {

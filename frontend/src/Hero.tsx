@@ -1,13 +1,17 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Hero.css';
 
 const Hero: React.FC = () => {
   return (
     <section className="hero">
       <div className="container">
-        <h1>Welcome to Our Service</h1>
-        <p>Experience the best service ever.</p>
-        <button className="btn-primary">Get Started</button>
+        <h1>Personalized Learning for Students, Insightful Teaching for Educators</h1>
+        <div>
+          <Link to="/login">
+            <button className="btn-primary">Get Started</button>
+          </Link>
+        </div>
       </div>
     </section>
   );
