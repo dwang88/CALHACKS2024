@@ -34,9 +34,9 @@ def wrap():
 
 
 @app.route('/add_teacher')
-def add_teacher(teacher, username, pwd, db):
-    new_teacher = db[teacher]
-    insert_new = {"username": username, "pwd": pwd}
+def add_teacher(teacher_name, teacher_id, email, db):
+    new_teacher = db[teacher_id]
+    insert_new = {"name": teacher_name, "email": email, "firebase id": teacher_id}
     new_teacher.insert_one(insert_new)
 
 
@@ -70,8 +70,8 @@ def add_class_report(teacher, class_name, class_report, db):
 
 
 @app.route('/student_exists/<student>')
-def student_exists(teacher, class_name, student, db):
-    collection = db[teacher][class_name][student]
+def student_exists(teacher_id, class_name, student_id, db):
+    collection = db[teacher_id][class_name][student_id]
     students = collection.find()
     students_found = list(students)
     students.close()
@@ -80,8 +80,8 @@ def student_exists(teacher, class_name, student, db):
     return False
 
 
-def get_class_total_categories(db, teacher, class_name):
-    observe = db[teacher][class_name]
+def get_class_total_categories(db, teacher_id, class_name):
+    observe = db[teacher_id][class_name]
     cursor = observe.find()
     data = list(cursor)[0]
     cursor.close()
@@ -97,7 +97,7 @@ def change_to_list(string):
 
 
 @app.route('/<student>/student_report')
-def generate_student_report(teacher, class_name, student, db, questions: list=None):
+def generate_student_report(teacher_id, class_name, student, db, questions: list=None):
     os.environ['AWS_ACCESS_KEY_ID'] = ""
     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
@@ -123,7 +123,7 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
     categories = list(change_to_list(categories))
 
     if categories:
-        class_update = db[teacher][class_name]
+        class_update = db[teacher_id][class_name]
 
         observe = class_update.find()
         old_data = list(observe)[0]
@@ -134,10 +134,10 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
         new = {"struggling": old + categories}
         class_update.update_one({"name": class_name}, {"$set": new})
 
-    if student_exists(teacher, class_name, student, db):
-        update_student(teacher, class_name, student, categories, db)
+    if student_exists(teacher_id, class_name, student, db):
+        update_student(teacher_id, class_name, student, categories, db)
     else:
-        add_student_to_class(teacher, class_name, student, categories, db)
+        add_student_to_class(teacher_id, class_name, student, categories, db)
 
 
 def update_student(teacher, class_name, student, report, db):
