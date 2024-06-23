@@ -4,6 +4,8 @@ from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import os
+import json
+import boto3
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +17,14 @@ db = client['TestDB']
 teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
+
+# helper method - change to list
+def change_to_list(string):
+    string_split = string.split(",")
+    while "" in string_split:
+        string_split.remove("")
+    for i in string_split:
+        yield i.strip()
 
 @app.route('/api/hello', methods=['GET'])
 def hello():
@@ -57,10 +67,12 @@ def add_class():
             {"_id": teacher_id},
             {"$push": {"classes": {
                 "name": class_name,
-                "report": "N/A",
+                "report": [],
                 "students": []
             }}}
         )
+
+        classes_collection.insert_one(class_data)
 
         if result.modified_count == 1:
             return jsonify({"message": "Class added successfully!"}), 201
@@ -122,6 +134,123 @@ def get_teachers():
         return jsonify({"Message":"got all teachers"})
     except Exception as e:
         return jsonify({"error": str(e)})
+
+@app.route('/get_students_by_class', methods=['GET'])
+def get_students_by_class():
+    try:
+        data = request.get_json()
+        class_id = ObjectId(data['class_id'])
+
+        class_name = classes_collection.find_one({"_id": class_id})
+        if not class_name:
+            return jsonify({"error":"class not found"}), 404
+        
+        students = class_name['students']
+        students_arr = []
+        for student in students:
+            student_id = ObjectId(student)
+            student = students_collection.find_one({"_id": student_id})
+            if student:
+                student['_id'] = str(student['_id'])
+                students_arr.append(student)
+
+        return jsonify({"Message": "Student successfully retrieved", "Students": students_arr})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    
+@app.route('/add_report', methods=['PATCH'])
+def add_report():
+    try:
+        data = request.get_json()
+        class_id = ObjectId(data['class_id'])
+        report = data['report']
+        target_class = classes_collection.update_one(
+            {"_id":class_id},
+            {"$push": {"reports": report}}
+        )
+
+        if target_class.modified_count == 0:
+            return jsonify({"error": "Class not found or report not added"}), 404
+
+        return jsonify({"message": "Report added successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/add_question', methods=['PATCH'])
+def add_question():
+    try:
+        data = request.get_json()
+        student_id = ObjectId(data['student_id'])
+        question = data['question']
+        target_student = students_collection.update_one(
+            {"_id":student_id},
+            {"$push": {"questions": question}}
+        )
+
+        if target_student.modified_count == 0:
+            return jsonify({"error": "Class not found or report not added"}), 404
+
+        return jsonify({"message": "Question added successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/generate_student_report', methods=['POST'])
+def generate_student_report():
+    data = request.get_json()
+    student_id = ObjectId(data['student_id'])
+    teacher_id = ObjectId(data['teacher_id'])
+    class_name = data['class_name']
+    questions_list = students_collection.find_one({"_id":student_id})['questions']
+
+    os.environ['AWS_ACCESS_KEY_ID'] = "AKIAQ3EGRVDJD66V45W2"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "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"
+    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+
+    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+    prompt = f"Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.\n"
+
+    for i in questions_list:
+        prompt += (i + "\n")
+
+    formatted_prompt = f'Human: {prompt}\nAssistant:'
+
+    response = bedrock.invoke_model(
+        modelId = "anthropic.claude-v2",
+        body=json.dumps({
+            "prompt": formatted_prompt,
+            "max_tokens_to_sample": 2048,
+            "temperature": 0.7
+        })
+    )
+
+    result = json.loads(response.get("body").read())
+    print("result: ", result['completion'])
+    categories = result['completion']
+    categories = list(change_to_list(categories))
+
+    if categories:
+        classes = teachers_collection.find_one({"_id": teacher_id})['classes']
+
+        new = {"struggling": categories}
+        for class_n in classes:
+            if(class_n['name'] == class_name):
+                break
+        
+        # adding the struggling categories to the class
+        report = class_n['report']
+        classes_collection.update_one(
+            {"name": class_name},
+            {"$push": new}
+        )
+
+        # adds the indivdual student report to the student
+        students_collection.update_one(
+            {"_id": student_id},
+            {"$set": {"report": report}}
+        )
+        # classes.update_one({"name": class_name}, {"$set": new})
+    
+    return jsonify(class_n['report'])
 
 if __name__ == '__main__':
     app.run(debug=True)
