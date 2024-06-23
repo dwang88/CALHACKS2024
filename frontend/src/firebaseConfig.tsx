@@ -1,7 +1,5 @@
-// src/firebaseConfig.ts
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
-import { useState } from "react";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCMpdYucrFK2tqNMBg_qgDARTKb3efJhD0",
@@ -17,29 +15,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-const SignInWithGoogle = () => {
-  const [user,setUser] = useState<User | null>(null);
-
-  const handleLogin = () => {
-    try {
-        signInWithPopup(auth, provider).
-        then((res) => {
-            setUser(res.user);
-        }).catch((error)=> {
-            console.error(error);
-        });
-      } catch (error) {
-        console.error("Error during sign-in with Google: ", error);
-        throw error;
-      }
-  }
-  
-  return (
-    <>
-        <button onClick={handleLogin}>Login</button>
-        <p>Current user: {user?.displayName}</p>
-    </>
-  )
-}
+const SignInWithGoogle = (): Promise<User | null> => {
+  return signInWithPopup(auth, provider)
+    .then((result) => result.user)
+    .catch((error) => {
+      console.error("Error during sign-in with Google: ", error);
+      return null;
+    });
+};
 
 export { SignInWithGoogle };
