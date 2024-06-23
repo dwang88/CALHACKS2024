@@ -40,42 +40,26 @@ def add_teacher(teacher, username, pwd, db):
     new_teacher.insert_one(insert_new)
 
 
+def create_student(student_name, firebase_id, email, db):
+    new_student = db["students"][firebase_id]
+    insert_new = {"name": student_name, "email": email, "firebase id": firebase_id}
+    new_student.insert_one(insert_new)
+
+
 def add_class(teacher, class_name, db):
     new_class = db[teacher][class_name]
     insert_new = {"name": class_name, "struggling": [], "report": None}
     new_class.insert_one(insert_new)
 
 
-def update_class_struggling(teacher, class_name, db, /, additions: list=None, redone: list=None):
-    class_select = db[teacher][class_name]
-    
-    observe = class_select.find()
-    old_data = list(observe)[0]
-    observe.close()
-
-    old = old_data["struggling"]
-
-    if additions:
-        new = old + additions
-        class_select.update_one({"name": class_name}, {"$set": {"struggling": new}})
-    elif redone:
-        class_select.update_one({"name": class_name}, {"$set": {"struggling": redone}})
-
-
-# def get_class_dict(db, teacher, class_name):
-#     class_select = db[teacher][class_name]
-#     struggling_look = class_select.find()
-#     struggling_look.rewind()
-#     struggling_found = list(struggling_look)
-#     for i in struggling_found:
-#         if "struggling" in list(i.keys()):
-#             return i["struggling"], i["report"]
-#     return struggling_found[0]["name"]
-
-
-def add_student_to_class(teacher, class_name, student_name, db, report=None):
-    new_class = db[teacher][class_name][student_name]
-    insert_new = {"name": student_name, "report": report}
+def add_student_to_class(teacher, class_name, student_id, db, report=None):
+    new_class = db[teacher][class_name][student_id]
+    a = db[student_id]
+    b = a.find()
+    c = list(b)[0]
+    b.close()
+    student_name = c["name"]
+    insert_new = {"student id": student_id, "name": student_name, "report": report}
     new_class.insert_one(insert_new)
 
 
@@ -94,10 +78,6 @@ def student_exists(teacher, class_name, student, db):
     if students_found:
         return True
     return False
-
-
-def update_class_total_categories():
-    pass
 
 
 def get_class_total_categories(db, teacher, class_name):
@@ -124,8 +104,6 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
     
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
     prompt = f"Categorize the following questions into specific subtopics oriented categories and give me the categories only, separated by commas.\n"
-    # if not questions:
-    #     return
     for i in questions:
         prompt += (i + "\n")
 
@@ -144,7 +122,6 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
     categories = result['completion']
     categories = list(change_to_list(categories))
 
-    # add categories to class
     if categories:
         class_update = db[teacher][class_name]
 
@@ -156,8 +133,6 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
 
         new = {"struggling": old + categories}
         class_update.update_one({"name": class_name}, {"$set": new})
-    
-
 
     if student_exists(teacher, class_name, student, db):
         update_student(teacher, class_name, student, categories, db)
@@ -190,14 +165,10 @@ def del_student(teacher, class_name, student, db):
 
     old = old_data["struggling"]
 
-    # old, refer = get_class_dict(class_select)
-
     for i in data:
         old.remove(i)
 
     class_select.update_one({"name": class_name}, {"$set": {"struggling": old}})
-
-    # update_class_struggling(teacher, class_select, db, redone=old)
 
     removal.drop()
 
