@@ -202,8 +202,8 @@ def generate_student_report():
     class_name = data['class_name']
     questions_list = students_collection.find_one({"_id":student_id})['questions']
 
-    os.environ['AWS_ACCESS_KEY_ID'] = "AKIAQ3EGRVDJD66V45W2"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "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"
+    os.environ['AWS_ACCESS_KEY_ID'] = ""
+    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
 
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
