@@ -30,6 +30,12 @@ def change_to_list(string):
 def hello():
     return jsonify(message="Hello from Flask!")
 
+
+# add a student - need to pass a student object into this function
+# student in json format: {
+#                           name: {name - string},
+#                           report: {report - array}
+#                       }
 @app.route('/add_student', methods=['POST'])
 def add_student():
     try:
@@ -40,7 +46,15 @@ def add_student():
         return jsonify({"message": "Student added successfully!", "student_id": str(result.inserted_id)}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
+"""
+input for this method should be:
+{
+    "name": {name},
+    "classes": Array of classes
+}
+"""
 @app.route('/add_teacher', methods=['POST'])
 def add_teacher():
     try:
@@ -52,6 +66,13 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+"""
+input for this method should be:
+{
+    "teacher_id": {get the firebase uid of the teacher},
+    "class name": {name - String}
+}
+"""
 @app.route('/add_class', methods=['PATCH'])
 def add_class():
     try:
@@ -67,10 +88,12 @@ def add_class():
             {"_id": teacher_id},
             {"$push": {"classes": {
                 "name": class_name,
-                "report": [],
-                "students": []
+                "report": "",
+                "struggling": [],
             }}}
         )
+
+        class_data['students'] = []
 
         classes_collection.insert_one(class_data)
 
@@ -81,6 +104,12 @@ def add_class():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+"""
+{
+    "class_id": {MongoDB id of the class},
+    "student_id": {firebase id of the student}
+}
+"""
 @app.route('/enroll_student', methods=['PATCH'])
 def add_student_to_class():
     try:
@@ -100,7 +129,12 @@ def add_student_to_class():
             {"_id": class_obj_id},
             {"$push": {"students": student_obj_id}} 
         )
-        if class_result.modified_count > 0:
+
+        student_result = students_collection.update_one(
+            {"_id": student_obj_id},
+            {"$push", {"classes": class_obj_id}}
+        )
+        if class_result.modified_count > 0 and student_result.modified_count > 0:
             return jsonify({"message": "Student enrolled successfully.", "student_id": str(student_id)}), 200
         else:
             return jsonify({"error": "Failed to enroll student in class."}), 400
@@ -108,6 +142,7 @@ def add_student_to_class():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+#get all students
 @app.route('/get_students', methods=['GET'])
 def get_students():
     try:
@@ -117,6 +152,7 @@ def get_students():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# get all classes
 @app.route('/get_classes', methods=['GET'])
 def get_classes():
     try:
@@ -126,6 +162,7 @@ def get_classes():
     except Exception as e:
         return jsonify({"error":str(e)}), 500
 
+# get all teachers
 @app.route('/get_teachers', methods=['GET'])
 def get_teachers():
     try:
@@ -135,6 +172,13 @@ def get_teachers():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+"""
+input:
+{
+    "class_id": {class_id}
+    "class_name": {class name - String}
+}
+"""
 @app.route('/get_students_by_class', methods=['GET'])
 def get_students_by_class():
     try:
@@ -158,6 +202,22 @@ def get_students_by_class():
     except Exception as e:
         return jsonify({"error": str(e)})
     
+@app.route('/get_classes_for_student', methods=['GET'])
+def get_classes_for_student():
+    data = request.get_json()
+    student_id = ObjectId(data['student_id'])
+    classes = classes_collection.find()
+    list_classes = []
+    for c in classes:
+        students = c['students']
+        print(students)
+        print(student_id in students)
+        if(student_id in students):
+            c['_id'] = str(c['_id'])
+            c['students'] = [str(student) for student in c['students']]
+            list_classes.append(c)
+    return jsonify(list_classes)
+
 @app.route('/add_report', methods=['PATCH'])
 def add_report():
     try:
@@ -230,11 +290,14 @@ def generate_student_report():
 
     if categories:
         classes = teachers_collection.find_one({"_id": teacher_id})['classes']
+        print(classes)
 
         new = {"struggling": categories}
         for class_n in classes:
+            print(class_n)
             if(class_n['name'] == class_name):
                 break
+        print(class_n)
         
         # adding the struggling categories to the class
         report = class_n['report']
