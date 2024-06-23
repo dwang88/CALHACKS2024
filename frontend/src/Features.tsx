@@ -5,19 +5,18 @@ const Features: React.FC = () => {
   return (
     <section className="features" id="features">
       <div className="container">
-        <h2>Features</h2>
         <div className="feature-list">
           <div className="feature">
-            <h3>Feature 1</h3>
-            <p>Description of feature 1.</p>
+            <h3>Personalized Help.</h3>
+            <p>Get homework help, but without getting the answers.</p>
           </div>
           <div className="feature">
-            <h3>Feature 2</h3>
-            <p>Description of feature 2.</p>
+            <h3>Tailored Reports.</h3>
+            <p>Help teachers teach, by giving them detailed reports.</p>
           </div>
           <div className="feature">
-            <h3>Feature 3</h3>
-            <p>Description of feature 3.</p>
+            <h3>Teacher Dashboard.</h3>
+            <p>Access detailed feedback based on AI responses.</p>
           </div>
         </div>
       </div>
