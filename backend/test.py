@@ -10,7 +10,7 @@ uri = "mongodb+srv://anniesy2:Calhacks2024@teachers.6rnbrpj.mongodb.net/?retryWr
 app = Flask(__name__)
 
 
-def test_wrap():
+def wrap():
     client = MongoClient(uri, server_api=ServerApi('1'))
     try:
         db = client["StudentInformationTest"]
@@ -28,19 +28,6 @@ def test_wrap():
         client.close()
 
 
-def wrap(func):
-    client = MongoClient(uri, server_api=ServerApi('1'))
-    try:
-        db = client["StudentInformationTest"]
-        def inner(*args, **kwargs):
-            return func(*args, *kwargs, db=db)
-        return inner
-    except Exception as e:
-        print(e)
-    finally:
-        client.close()
-
-
 @app.route('/add_teacher')
 def add_teacher(teacher, username, pwd, db):
     new_teacher = db[teacher]
@@ -48,7 +35,7 @@ def add_teacher(teacher, username, pwd, db):
     new_teacher.insert_one(insert_new)
 
 
-def add_student_to_class(teacher, class_name, student_name, report, db):
+def add_student_to_class(teacher, class_name, student_name, db, report=None):
     new_class = db[teacher][class_name]["students"][student_name]
     insert_new = {"name": student_name, "report": report}
     new_class.insert_one(insert_new)
@@ -157,39 +144,29 @@ def generate_class_report(teacher, class_name, db, categories: list=None):
 
 """
 {
-teachers: {
-    teacher1: {
-        class1: {
-            report: report,
-            students: {
-                student_name1: {
-                    name: name,
-                    report: report
-                    },
-                student_name2: {
-                    name: name,
-                    report: report
-                    }
-                }
-            }
-        class2: {
-            report: report,
-            students: {
-                student1: lfkjsflkjf,
-                student2: lksjflsdfkjd,
-                student3: lksdjfldkjsd
+teacher1: {
+    class1: {
+        report: report,
+        students: {
+            student_name1: {
+                name: name,
+                report: report
+                },
+            student_name2: {
+                name: name,
+                report: report
                 }
             }
         }
-    },
-students: {
-    student1 username: {
-        name: sdkljf,
-        pwd: lskdjfg
-        },
-    student2 username: {
-        username: lskdjflk,
-        pwd: lksdjf}
+    class2: {
+        report: report,
+        students: {
+            student1: lfkjsflkjf,
+            student2: lksjflsdfkjd,
+            student3: lksdjfldkjsd
+            }
+        }
     }
 }
+
 """
