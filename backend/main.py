@@ -285,25 +285,33 @@ def generate_student_report():
     )
 
     result = json.loads(response.get("body").read())
-    print("result: ", result['completion'])
     categories = result['completion']
     # categories = list(change_to_list(categories))
 
     if categories:
-        print("HERE")
         classes = teachers_collection.find_one({"_id": teacher_id})['classes']
-        print(classes)
 
         new = {"struggling": categories}
         for class_n in classes:
-            print(class_n)
             if(class_n['name'] == class_name):
                 break
-        print(class_n)
         
+        print(type(categories))
+
+        new_categories = ""
+
+        for i in categories:
+            if i == "\'":
+                new_categories += '\"'
+            else:
+                new_categories += i
+
+        print(new_categories)
         # adding the struggling categories to the class
-        report = categories
-        print("report here:", report)
+        report = json.loads(new_categories)
+        written_report = ""
+        for i in list(report.keys()):
+            written_report += f"{report[i]} percent of people need more help with {i}. "
         classes_collection.update_one(
             {"class_name": class_name},
             {"$push": new}
@@ -312,9 +320,8 @@ def generate_student_report():
         # adds the indivdual student report to the student
         students_collection.update_one(
             {"_id": student_id},
-            {"$set": {"report": report}}
+            {"$set": {"report": written_report}}
         )
-        print(student_id)
         # classes.update_one({"name": class_name}, {"$set": new})
     
     return jsonify(class_n['report'])
@@ -329,7 +336,6 @@ def generate_class_report():
         if class_n["name"] == class_name:
             break
     categories_list = classes_collection.find_one({"class_name": class_name})["struggling"]
-    print("worked:", categories_list)
 
     os.environ['AWS_ACCESS_KEY_ID'] = ""
     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
@@ -337,7 +343,7 @@ def generate_class_report():
     
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
-    prompt = "Recombine the following list of categories by similarity in specific topic and regroup and remove duplicates. Return the resulting categories only, separated by commas, with no extra text.\n"
+    prompt = "Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
     for i in categories_list:
         prompt += (i + "\n")
     
@@ -353,10 +359,13 @@ def generate_class_report():
     )
 
     result = json.loads(response.get("body").read())
-    report = list(change_to_list(result["completion"]))
-    print(report)
+    report = json.loads(result["completion"])
+    written_report = ""
+    for i in list(report.keys()):
+        written_report += f"{report[i]} percent of people need more help with {i}. "
+    print(written_report)
 
-    classes_collection.update_one({"class_name": class_name}, {"$set": {"report": report}})
+    classes_collection.update_one({"class_name": class_name}, {"$set": {"report": written_report}})
 
     return jsonify(report)
 
