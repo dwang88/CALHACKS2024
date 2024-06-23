@@ -26,11 +26,6 @@ def change_to_list(string):
     for i in string_split:
         yield i.strip()
 
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify(message="Hello from Flask!")
-
-
 # add a student - need to pass a student object into this function
 # student in json format: {
 #                           name: {name - string},
@@ -41,7 +36,14 @@ def add_student():
     try:
         student_data = request.get_json()
 
+        uid = student_data['uid']
+        target = students_collection.find_one({"uid":uid})
+        if target:
+            return jsonify({"message": "User already exists"})
+
         result = students_collection.insert_one(student_data)
+
+        
 
         return jsonify({"message": "Student added successfully!", "student_id": str(result.inserted_id)}), 201
     except Exception as e:
@@ -60,6 +62,11 @@ def add_teacher():
     try:
         teacher_data = request.get_json()
 
+        uid = teacher_data['uid']
+        target = teachers_collection.find_one({"uid":uid})
+        if target:
+            return jsonify({"message": "User already exists"})
+        
         result = teachers_collection.insert_one(teacher_data)
 
         return jsonify({"message": "Teacher added successfully!", "teacher_id": str(result.inserted_id)}), 201
@@ -251,6 +258,31 @@ def add_question():
             return jsonify({"error": "Class not found or report not added"}), 404
 
         return jsonify({"message": "Question added successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+@app.route('/get_classes_for_teacher/<teacher_id>', methods=['GET'])
+def get_classes_for_teacher(teacher_id):
+    try:
+        # Convert the teacher_id to an ObjectId
+        teacher_id = ObjectId(teacher_id)
+        
+        # Find the teacher in the database
+        teacher = teachers_collection.find_one({"_id": teacher_id})
+        if not teacher:
+            return jsonify({"error": "Teacher not found"}), 404
+        
+        # Find the classes for the teacher
+        classes = teacher['classes']
+        result_classes = []
+        for class_obj in classes:
+            if class_obj:
+                print(class_obj)
+                # Convert ObjectId to string for JSON serialization
+                result_classes.append(class_obj)
+        
+        return jsonify({"classes": result_classes}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     

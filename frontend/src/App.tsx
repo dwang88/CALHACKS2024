@@ -8,18 +8,12 @@ import Footer from './Footer';
 import Login from './Login';
 import SolutionOutput from './SolutionOutput';
 import StudentDashboard from './StudentDashboard';
+import TeacherDashboard from './TeacherDashboard';
 import ProtectedRoute from './ProtectedRoute';
 
 function App() {
   const [message, setMessage] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/hello')
-      .then(response => response.json())
-      .then(data => setMessage(data.message));
-    console.log(message);
-  }, [message]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -42,6 +36,11 @@ function App() {
           <Route path="/student" element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <StudentDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/teacher" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <TeacherDashboard />
             </ProtectedRoute>
           } />
         </Routes>

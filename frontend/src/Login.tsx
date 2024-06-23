@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { SignInWithGoogle } from './firebaseConfig';
+import axios from "axios"
 
 const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
@@ -15,18 +16,37 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     SignInWithGoogle().then((user) => {
       if (user) {
         onLogin();
-        navigate('/student');
+
+        const studentData = {
+          uid: user.uid,
+          name: user.displayName,
+          classes: []
+        }
+        const result = axios.post("http://localhost:5000/add_student", studentData);
+        console.log(result);
       }
+    }).catch(error => {
+      console.error(error)
     });
+    navigate('/student');
   };
 
   const handleTeacherLogin = () => {
     SignInWithGoogle().then((user) => {
       if (user) {
         onLogin();
-        navigate('/teacher'); // Assuming you have a TeacherDashboard
+
+        const teacherData = {
+          uid: user.uid,
+          name: user.displayName,
+          classes: []
+        }
+        const result = axios.post("http://localhost:5000/add_teacher", teacherData); // Assuming you have a TeacherDashboard
       }
+    }).catch(error => {
+      console.error(error)
     });
+    navigate('/teacher');
   };
 
   return (
