@@ -146,6 +146,7 @@ def generate_class_report(teacher, class_name, db, categories: list=None):
 {
 teacher1: {
     class1: {
+        name: name,
         report: report,
         students: {
             student_name1: {
