@@ -28,7 +28,8 @@ def wrap():
         # add_teacher("Dog", "Dogs", "Dogs2", db)
         # add_student_to_class("Dog", "Class One", "Student One", "report", db)
         # add_class_report("Dog", "Class One", "class report", db)
-        update_student("Dog", "Class One", "Student One", "new report", db)
+        # update_student("Dog", "Class One", "Student One", "new report", db)
+        del_student("Dog", "Class One", "Student One", db)
     except Exception as e:
         print(e)
     finally:
@@ -104,6 +105,8 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
 
 
 # can we assume that students cannot have the same name? --> student id solves this
+# do we need a function to delete a student
+
 
 def update_student(teacher, class_name, student, report, db):
     new_class = db[teacher][class_name]["students"][student]
@@ -111,6 +114,44 @@ def update_student(teacher, class_name, student, report, db):
     new_class.update_one({"name": student}, {'$set': insert_new})
 
 
+def del_student(teacher, class_name, student, db):
+    db[teacher][class_name]["students"][student].drop()
+
+
+def generate_class_report(teacher, class_name, db, categories: list=None):
+    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+
+    modelId = "anthropic.claude-3-haiku-20240307-v1:0"
+
+    accept = "application/json"
+    contentType = "application/json"
+    prompt = "Recombine the following list of categories by similarity in specific topic and regroup. Return the resulting categories only, separated by commas.\n"
+    if categories is None:
+        return
+    for i in categories:
+        prompt += (i + "\n")
+
+    response = bedrock.invoke_model(
+        modelId=modelId,
+        body=json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 1024,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [{"type": "text", "text": prompt}]
+                    }
+                ]
+
+            }
+        )
+    )
+
+    result = json.loads(response.get("body").read())
+    print(result)  # check what the output is
+
+    add_class_report(teacher, class_name, result, db)
 
 
 wrap()
