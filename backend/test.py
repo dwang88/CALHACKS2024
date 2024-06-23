@@ -2,40 +2,46 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import boto3
 import json
+import os
+from flask import Flask
 
 uri = "mongodb+srv://anniesy2:Calhacks2024@teachers.6rnbrpj.mongodb.net/?retryWrites=true&w=majority&appName=Teachers"
 
-
-def test():
-    client = MongoClient(uri, server_api=ServerApi('1'))
-
-    try:
-        mydb = client["testing"]
-        two = mydb["test3"]
-        three = two["test4"]
-        new = three.insert_one({"hi": "goodbye"})
-        # new = two.insert_one({})
-        # new = two.insert_one({"name": "Alice", "age": 30})
-        # print("done")
-    except Exception as e:
-        print(e)
+app = Flask(__name__)
 
 
-def wrap():
+def test_wrap():
     client = MongoClient(uri, server_api=ServerApi('1'))
     try:
         db = client["StudentInformationTest"]
+        questions = ["Where do I start?", "How do I add two numbers together?", "How do I multiply two numbers together?", "In what order do I perform the operations?", "What is the first step?"]
+        # generate_student_report("Dog", "Class One", "Student Two", db, questions)
+        # student_exists("Dog", "Class One", "Student One", db)
         # add_teacher("Dog", "Dogs", "Dogs2", db)
         # add_student_to_class("Dog", "Class One", "Student One", "report", db)
-        # add_class_report("Dog", "Class One", "class report", db)
+        add_class_report("Dog", "Class One", "class report", db)
         # update_student("Dog", "Class One", "Student One", "new report", db)
-        del_student("Dog", "Class One", "Student One", db)
+        # del_student("Dog", "Class One", "Student Two", db)
     except Exception as e:
         print(e)
     finally:
         client.close()
 
 
+def wrap(func):
+    client = MongoClient(uri, server_api=ServerApi('1'))
+    try:
+        db = client["StudentInformationTest"]
+        def inner(*args, **kwargs):
+            return func(*args, *kwargs, db=db)
+        return inner
+    except Exception as e:
+        print(e)
+    finally:
+        client.close()
+
+
+@app.route('/add_teacher')
 def add_teacher(teacher, username, pwd, db):
     new_teacher = db[teacher]
     insert_new = {"username": username, "pwd": pwd}
@@ -54,58 +60,52 @@ def add_class_report(teacher, class_name, class_report, db):
     insert.insert_one(insert_new)
 
 
+@app.route('/student_exists/<student>')
+def student_exists(teacher, class_name, student, db):
+    collection = db[teacher][class_name]["students"][student]
+    students = collection.find()
+    students_found = list(students)
+    students.close()
+    if students_found:
+        return True
+    return False
+
+
+def get_class_total_categories():
+    pass
+
+
+@app.route('/<student>/student_report')
 def generate_student_report(teacher, class_name, student, db, questions: list=None):
+    os.environ['AWS_ACCESS_KEY_ID'] = ""
+    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+    
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
-
-    modelId = "anthropic.claude-3-haiku-20240307-v1:0"
-
-    accept = "application/json"
-    contentType = "application/json"
-    prompt = f"Categorize the following questions into topic oriented categories and give me the categories only, separated by commas.\n"
+    prompt = f"Categorize the following questions into specific subtopics oriented categories and give me the categories only, separated by commas.\n"
     if not questions:
         return
     for i in questions:
         prompt += (i + "\n")
 
-    response = bedrock.invoke_model(
-        modelId=modelId,
-        body=json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1024,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                ]
+    formatted_prompt = f'Human: {prompt}\nAssistant:'
 
-            }
-        )
+    response = bedrock.invoke_model(
+        modelId = "anthropic.claude-v2",
+        body=json.dumps({
+            "prompt": formatted_prompt,
+            "max_tokens_to_sample": 2048,
+            "temperature": 0.7
+            })
     )
 
     result = json.loads(response.get("body").read())
-    print(result)  # check what the output is
+    categories = result['completion']
 
-    add_student_to_class(teacher, class_name, student, result, db)
-
-    # input_tokens = result["usage"]["input_tokens"]
-    # output_tokens = result["usage"]["output_tokens"]
-    # output_list = result.get("content", [])
-
-    # print("Invocation details: ")
-    # print(f"- The input length is {input_tokens} ttokens" )
-    # print(f"- The output length is {output_tokens} ttokens" )
-
-    # print(f" - The model returned {len(output_list)} messages")
-
-    # for output in output_list:
-    #     print(output["text"])
-
-
-
-# can we assume that students cannot have the same name? --> student id solves this
-# do we need a function to delete a student
+    if student_exists(teacher, class_name, student, db):
+        update_student(teacher, class_name, student, categories, db)
+    else:
+        add_student_to_class(teacher, class_name, student, categories, db)
 
 
 def update_student(teacher, class_name, student, report, db):
@@ -114,47 +114,46 @@ def update_student(teacher, class_name, student, report, db):
     new_class.update_one({"name": student}, {'$set': insert_new})
 
 
+@app.route('/<student>/delete')
 def del_student(teacher, class_name, student, db):
     db[teacher][class_name]["students"][student].drop()
 
 
+@app.route('/class/class_report')
 def generate_class_report(teacher, class_name, db, categories: list=None):
+    os.environ['AWS_ACCESS_KEY_ID'] = ""
+    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+    
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
-    modelId = "anthropic.claude-3-haiku-20240307-v1:0"
-
-    accept = "application/json"
-    contentType = "application/json"
     prompt = "Recombine the following list of categories by similarity in specific topic and regroup. Return the resulting categories only, separated by commas.\n"
     if categories is None:
         return
     for i in categories:
         prompt += (i + "\n")
 
-    response = bedrock.invoke_model(
-        modelId=modelId,
-        body=json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1024,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [{"type": "text", "text": prompt}]
-                    }
-                ]
+    formatted_prompt = f'Human: {prompt}\nAssistant:'
 
-            }
-        )
+    response = bedrock.invoke_model(
+        modelId = "anthropic.claude-v2",
+        body=json.dumps({
+            "prompt": formatted_prompt,
+            "max_tokens_to_sample": 2048,
+            "temperature": 0.7
+            })
     )
 
     result = json.loads(response.get("body").read())
-    print(result)  # check what the output is
+    print(result)
+    # categories = result['completion']
+    # add_class_report(teacher, class_name, result, db)
 
-    add_class_report(teacher, class_name, result, db)
 
+# wrap()
 
-wrap()
+# if __name__ == "__main__":
+#     app.run(debug=True)
 
 """
 {
@@ -163,9 +162,14 @@ teachers: {
         class1: {
             report: report,
             students: {
-                student1: report,
-                student2: report,
-                student3: lksdjfldkjsd
+                student_name1: {
+                    name: name,
+                    report: report
+                    },
+                student_name2: {
+                    name: name,
+                    report: report
+                    }
                 }
             }
         class2: {
