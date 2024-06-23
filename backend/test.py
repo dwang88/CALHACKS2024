@@ -18,12 +18,17 @@ def wrap():
         # generate_student_report("Dog", "Class One", "Student Two", db, questions)
         # student_exists("Dog", "Class One", "Student One", db)
         # add_teacher("Dog", "Dogs", "Dogs2", db)
-        # add_student_to_class("Dog", "Class One", "Student One", "report", db)
-        add_class_report("Dog", "Class One", "class report", db)
+        # add_student_to_class("Dog", "Class One", "Student Two", db)
+        # generate_student_report("Dog", "Class One", "Student Two", db, questions)
+        # add_class_report("Dog", "Class One", "class report", db)
         # update_student("Dog", "Class One", "Student One", "new report", db)
         # del_student("Dog", "Class One", "Student Two", db)
+        # add_class("Dog", "Class One", db)
+        categories = get_class_total_categories(db, "Dog", "Class One")
+        generate_class_report("Dog", "Class One", db, categories)
     except Exception as e:
         print(e)
+        raise
     finally:
         client.close()
 
@@ -35,8 +40,41 @@ def add_teacher(teacher, username, pwd, db):
     new_teacher.insert_one(insert_new)
 
 
+def add_class(teacher, class_name, db):
+    new_class = db[teacher][class_name]
+    insert_new = {"name": class_name, "struggling": [], "report": None}
+    new_class.insert_one(insert_new)
+
+
+def update_class_struggling(teacher, class_name, db, /, additions: list=None, redone: list=None):
+    class_select = db[teacher][class_name]
+    
+    observe = class_select.find()
+    old_data = list(observe)[0]
+    observe.close()
+
+    old = old_data["struggling"]
+
+    if additions:
+        new = old + additions
+        class_select.update_one({"name": class_name}, {"$set": {"struggling": new}})
+    elif redone:
+        class_select.update_one({"name": class_name}, {"$set": {"struggling": redone}})
+
+
+# def get_class_dict(db, teacher, class_name):
+#     class_select = db[teacher][class_name]
+#     struggling_look = class_select.find()
+#     struggling_look.rewind()
+#     struggling_found = list(struggling_look)
+#     for i in struggling_found:
+#         if "struggling" in list(i.keys()):
+#             return i["struggling"], i["report"]
+#     return struggling_found[0]["name"]
+
+
 def add_student_to_class(teacher, class_name, student_name, db, report=None):
-    new_class = db[teacher][class_name]["students"][student_name]
+    new_class = db[teacher][class_name][student_name]
     insert_new = {"name": student_name, "report": report}
     new_class.insert_one(insert_new)
 
@@ -44,12 +82,12 @@ def add_student_to_class(teacher, class_name, student_name, db, report=None):
 def add_class_report(teacher, class_name, class_report, db):
     insert = db[teacher][class_name]
     insert_new = {"report": class_report}
-    insert.insert_one(insert_new)
+    insert.update_one({"name": class_name}, insert_new)
 
 
 @app.route('/student_exists/<student>')
 def student_exists(teacher, class_name, student, db):
-    collection = db[teacher][class_name]["students"][student]
+    collection = db[teacher][class_name][student]
     students = collection.find()
     students_found = list(students)
     students.close()
@@ -58,8 +96,24 @@ def student_exists(teacher, class_name, student, db):
     return False
 
 
-def get_class_total_categories():
+def update_class_total_categories():
     pass
+
+
+def get_class_total_categories(db, teacher, class_name):
+    observe = db[teacher][class_name]
+    cursor = observe.find()
+    data = list(cursor)[0]
+    cursor.close()
+    return data["struggling"]
+
+
+def change_to_list(string):
+    string_split = string.split(",")
+    while "" in string_split:
+        string_split.remove("")
+    for i in string_split:
+        yield i.strip()
 
 
 @app.route('/<student>/student_report')
@@ -70,8 +124,8 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
     
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
     prompt = f"Categorize the following questions into specific subtopics oriented categories and give me the categories only, separated by commas.\n"
-    if not questions:
-        return
+    # if not questions:
+    #     return
     for i in questions:
         prompt += (i + "\n")
 
@@ -88,6 +142,22 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
 
     result = json.loads(response.get("body").read())
     categories = result['completion']
+    categories = list(change_to_list(categories))
+
+    # add categories to class
+    if categories:
+        class_update = db[teacher][class_name]
+
+        observe = class_update.find()
+        old_data = list(observe)[0]
+        observe.close()
+
+        old = old_data["struggling"]
+
+        new = {"struggling": old + categories}
+        class_update.update_one({"name": class_name}, {"$set": new})
+    
+
 
     if student_exists(teacher, class_name, student, db):
         update_student(teacher, class_name, student, categories, db)
@@ -96,14 +166,40 @@ def generate_student_report(teacher, class_name, student, db, questions: list=No
 
 
 def update_student(teacher, class_name, student, report, db):
-    new_class = db[teacher][class_name]["students"][student]
+    new_class = db[teacher][class_name][student]
     insert_new = {"report": report}
     new_class.update_one({"name": student}, {'$set': insert_new})
 
 
 @app.route('/<student>/delete')
 def del_student(teacher, class_name, student, db):
-    db[teacher][class_name]["students"][student].drop()
+    removal = db[teacher][class_name][student]
+    cursor = removal.find()
+    try:
+        data = list(cursor)[0]["report"]
+    except IndexError:
+        data = []
+    finally:
+        cursor.close()
+    
+    class_select = db[teacher][class_name]
+
+    observe = class_select.find()
+    old_data = list(observe)[0]
+    observe.close()
+
+    old = old_data["struggling"]
+
+    # old, refer = get_class_dict(class_select)
+
+    for i in data:
+        old.remove(i)
+
+    class_select.update_one({"name": class_name}, {"$set": {"struggling": old}})
+
+    # update_class_struggling(teacher, class_select, db, redone=old)
+
+    removal.drop()
 
 
 @app.route('/class/class_report')
@@ -114,11 +210,13 @@ def generate_class_report(teacher, class_name, db, categories: list=None):
     
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
-    prompt = "Recombine the following list of categories by similarity in specific topic and regroup. Return the resulting categories only, separated by commas.\n"
+    prompt = "Recombine the following list of categories by similarity in specific topic and regroup and remove duplicates. Return the resulting categories only, separated by commas, with no extra text.\n"
     if categories is None:
         return
     for i in categories:
         prompt += (i + "\n")
+
+    # print("prompt:", prompt)
 
     formatted_prompt = f'Human: {prompt}\nAssistant:'
 
@@ -132,12 +230,16 @@ def generate_class_report(teacher, class_name, db, categories: list=None):
     )
 
     result = json.loads(response.get("body").read())
-    print(result)
+    print("result:", result)
+
+    update_collection = db[teacher][class_name]
+    update_collection.update_one({"name": class_name}, {"$set": {"report": list(change_to_list(result["completion"]))}})
+
     # categories = result['completion']
     # add_class_report(teacher, class_name, result, db)
 
 
-# wrap()
+wrap()
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
