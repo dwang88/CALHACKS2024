@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Navbar from './Navbar';
 import Hero from './Hero';
 import Features from './Features';
 import Footer from './Footer';
+import Login from './Login';
 import { SignInWithGoogle } from './firebaseConfig';
 
 function App() {
@@ -25,12 +26,12 @@ function App() {
           <Route path="/" element={
             <>
               <Hero />
+              <Features />
               <Footer />
             </>
           } />
+          <Route path="/login" element={<Login />} />
         </Routes>
-        <SignInWithGoogle />
-        <p>{message}</p>
       </div>
     </Router>
   );

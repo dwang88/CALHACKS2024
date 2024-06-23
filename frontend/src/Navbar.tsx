@@ -11,8 +11,9 @@ const Navbar: React.FC = () => {
         </div>
         <ul className="nav-links">
           <li><Link to="/">Home</Link></li>
-          <li><a href="#features">Features</a></li> {/* Use <a> for same-page sections */}
-          <li><a href="#contact">Contact</a></li>   {/* Use <a> for same-page sections */}
+          <li><Link to="/features">Features</Link></li>
+          <li><Link to="/login">Login</Link></li>
+          <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
     </nav>
