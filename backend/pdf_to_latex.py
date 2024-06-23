@@ -34,7 +34,8 @@ def image_to_base64(image_path):
     with open(image_path, 'rb') as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-for image_name in os.listdir(output_folder):
+image_files = sorted(os.listdir(output_folder))
+for image_name in image_files:
     image_path = os.path.join(output_folder, image_name)
     if os.path.isfile(image_path) and image_name.lower().endswith(('png', 'jpg', 'jpeg')):
         image_base64 = image_to_base64(image_path)
@@ -45,7 +46,7 @@ for image_name in os.listdir(output_folder):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "What’s in this image?"},
+                        {"type": "text", "text": "Extract the Latex code from the provided image. Just give me the Latex code in your response -- Nothing less, Nothing more."},
                         {
                             "type": "image_url",
                             "image_url": {
@@ -58,5 +59,6 @@ for image_name in os.listdir(output_folder):
             max_tokens=300,
         )
 
-        print(f"Response for {image_name}:")
-        print(response.choices[0])
+        latex_code = response.choices[0].message.content.strip()
+        print(f"Response for {image_name}: {latex_code}")
+                                
