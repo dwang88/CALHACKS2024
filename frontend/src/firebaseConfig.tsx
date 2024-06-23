@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, User } from "firebase/aut
 import { useState } from "react";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCMpdYucrFK2tqNMBg_qgDARTKb3efJhD0",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "canvas-gpt.firebaseapp.com",
   projectId: "canvas-gpt",
   storageBucket: "canvas-gpt.appspot.com",
