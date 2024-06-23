@@ -1,5 +1,7 @@
+// src/firebaseConfig.tsx
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
+import { useState } from "react";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCMpdYucrFK2tqNMBg_qgDARTKb3efJhD0",
@@ -15,13 +17,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-const SignInWithGoogle = (): Promise<User | null> => {
-  return signInWithPopup(auth, provider)
-    .then((result) => result.user)
-    .catch((error) => {
-      console.error("Error during sign-in with Google: ", error);
-      return null;
-    });
+const SignInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+  } catch (error) {
+    console.error("Error during sign-in with Google: ", error);
+    throw error;
+  }
 };
 
 export { SignInWithGoogle };

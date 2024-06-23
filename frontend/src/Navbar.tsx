@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
         </div>
         <ul className="nav-links">
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/features">Placeholder 2</Link></li>
+          <li><Link to="/features">Features</Link></li>
           <li><Link to="/login">Login</Link></li>
         </ul>
       </div>

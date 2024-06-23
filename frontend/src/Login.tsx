@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { SignInWithGoogle } from './firebaseConfig';
-import axios from "axios"
 
 const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
@@ -12,41 +11,46 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     setUserType(type);
   };
 
-  const handleStudentLogin = () => {
-    SignInWithGoogle().then((user) => {
+  const handleStudentLogin = async () => {
+    try {
+      const user = await SignInWithGoogle();
       if (user) {
         onLogin();
 
-        const studentData = {
-          uid: user.uid,
-          name: user.displayName,
-          classes: []
-        }
-        const result = axios.post("http://localhost:5000/add_student", studentData);
-        console.log(result);
+        const dummyClasses = [
+          {
+            id: 1,
+            name: 'Math 101',
+            assignments: [
+              { id: 1, name: 'Homework 1', content: 'Solve integrals', pdfUrl: 'path/to/math101_hw1.pdf' }
+            ]
+          },
+          {
+            id: 2,
+            name: 'History 201',
+            assignments: [
+              { id: 2, name: 'Homework 1', content: 'Write an essay on WWII', pdfUrl: 'path/to/history201_hw1.pdf' }
+            ]
+          }
+        ];
+
+        navigate('/student', { state: { classes: dummyClasses } });
       }
-    }).catch(error => {
-      console.error(error)
-    });
-    navigate('/student');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleTeacherLogin = () => {
-    SignInWithGoogle().then((user) => {
+  const handleTeacherLogin = async () => {
+    try {
+      const user = await SignInWithGoogle();
       if (user) {
         onLogin();
-
-        const teacherData = {
-          uid: user.uid,
-          name: user.displayName,
-          classes: []
-        }
-        const result = axios.post("http://localhost:5000/add_teacher", teacherData); // Assuming you have a TeacherDashboard
+        navigate('/teacher'); // Assuming you have a TeacherDashboard
       }
-    }).catch(error => {
-      console.error(error)
-    });
-    navigate('/teacher');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

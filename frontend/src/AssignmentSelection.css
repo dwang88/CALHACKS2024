@@ -1,0 +1,125 @@
+.assignment-selection {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    margin: 20px auto;
+  }
+  
+  .assignment-selection h2 {
+    margin-bottom: 10px;
+  }
+  
+  .assignment-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .assignment-list li {
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .assignment-list li:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .viewer-chat-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  
+  .pdf-viewer {
+    flex: 1;
+    margin-right: 20px;
+  }
+  
+  .chatbot {
+    flex: 1;
+  }
+  
+  .chatbot h2 {
+    margin-bottom: 10px;
+  }
+  
+  .chat-history {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eaeaea;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin-bottom: 10px;
+  }
+  
+  .chat-message {
+    margin-bottom: 10px;
+  }
+  
+  .chat-message.student {
+    color: blue;
+  }
+  
+  .chat-message.assistant {
+    color: green;
+  }
+  
+  .chat-input {
+    display: flex;
+  }
+  
+  .chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    margin-right: 10px;
+  }
+  
+  .chat-input button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .chat-input button:hover {
+    background-color: #0056b3;
+  }
+  
+  .pdf-upload {
+    margin-top: 20px;
+  }
+  
+  .pdf-upload h2 {
+    margin-bottom: 10px;
+  }
+  
+  .pdf-upload input[type="file"] {
+    margin-bottom: 10px;
+  }
+  
+  .pdf-upload button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .pdf-upload button:hover {
+    background-color: #0056b3;
+  }
+  

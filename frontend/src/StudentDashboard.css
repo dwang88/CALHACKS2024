@@ -1,0 +1,32 @@
+.student-dashboard {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 20px auto;
+  }
+  
+  .student-dashboard h2 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .class-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .class-list li {
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #eaeaea;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .class-list li:hover {
+    background-color: #ddd;
+  }
+  
