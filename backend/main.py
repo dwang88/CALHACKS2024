@@ -10,7 +10,7 @@ import boto3
 app = Flask(__name__)
 CORS(app)
 
-uri = os.getenv("DB_URL")
+uri = os.getenv("DB_URL", "mongodb+srv://anniesy2:Calhacks2024@teachers.6rnbrpj.mongodb.net/?retryWrites=true&w=majority&appName=Teachers")
 
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['TestDB']
@@ -26,6 +26,11 @@ def change_to_list(string):
     for i in string_split:
         yield i.strip()
 
+@app.route('/api/hello', methods=['GET'])
+def hello():
+    return jsonify(message="Hello from Flask!")
+
+
 # add a student - need to pass a student object into this function
 # student in json format: {
 #                           name: {name - string},
@@ -36,14 +41,7 @@ def add_student():
     try:
         student_data = request.get_json()
 
-        uid = student_data['uid']
-        target = students_collection.find_one({"uid":uid})
-        if target:
-            return jsonify({"message": "User already exists"})
-
         result = students_collection.insert_one(student_data)
-
-        
 
         return jsonify({"message": "Student added successfully!", "student_id": str(result.inserted_id)}), 201
     except Exception as e:
@@ -62,11 +60,6 @@ def add_teacher():
     try:
         teacher_data = request.get_json()
 
-        uid = teacher_data['uid']
-        target = teachers_collection.find_one({"uid":uid})
-        if target:
-            return jsonify({"message": "User already exists"})
-        
         result = teachers_collection.insert_one(teacher_data)
 
         return jsonify({"message": "Teacher added successfully!", "teacher_id": str(result.inserted_id)}), 201
@@ -260,32 +253,8 @@ def add_question():
         return jsonify({"message": "Question added successfully!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 
-@app.route('/get_classes_for_teacher/<teacher_id>', methods=['GET'])
-def get_classes_for_teacher(teacher_id):
-    try:
-        # Convert the teacher_id to an ObjectId
-        teacher_id = ObjectId(teacher_id)
-        
-        # Find the teacher in the database
-        teacher = teachers_collection.find_one({"_id": teacher_id})
-        if not teacher:
-            return jsonify({"error": "Teacher not found"}), 404
-        
-        # Find the classes for the teacher
-        classes = teacher['classes']
-        result_classes = []
-        for class_obj in classes:
-            if class_obj:
-                print(class_obj)
-                # Convert ObjectId to string for JSON serialization
-                result_classes.append(class_obj)
-        
-        return jsonify({"classes": result_classes}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
+
 @app.route('/generate_student_report', methods=['POST'])
 def generate_student_report():
     data = request.get_json()
@@ -299,7 +268,7 @@ def generate_student_report():
     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
 
     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
-    prompt = f"Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.\n"
+    prompt = f"Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
 
     for i in questions_list:
         prompt += (i + "\n")
@@ -318,9 +287,10 @@ def generate_student_report():
     result = json.loads(response.get("body").read())
     print("result: ", result['completion'])
     categories = result['completion']
-    categories = list(change_to_list(categories))
+    # categories = list(change_to_list(categories))
 
     if categories:
+        print("HERE")
         classes = teachers_collection.find_one({"_id": teacher_id})['classes']
         print(classes)
 
@@ -332,9 +302,10 @@ def generate_student_report():
         print(class_n)
         
         # adding the struggling categories to the class
-        report = class_n['report']
+        report = categories
+        print("report here:", report)
         classes_collection.update_one(
-            {"name": class_name},
+            {"class_name": class_name},
             {"$push": new}
         )
 
@@ -343,9 +314,52 @@ def generate_student_report():
             {"_id": student_id},
             {"$set": {"report": report}}
         )
+        print(student_id)
         # classes.update_one({"name": class_name}, {"$set": new})
     
     return jsonify(class_n['report'])
+
+@app.route('/generate_class_report', methods=['POST'])
+def generate_class_report():
+    data = request.get_json()
+    teacher_id = data["_id"]
+    class_name = data["class_name"]
+    classes = teachers_collection.find_one({"_id": ObjectId(teacher_id)})["classes"]
+    for class_n in classes:
+        if class_n["name"] == class_name:
+            break
+    categories_list = classes_collection.find_one({"class_name": class_name})["struggling"]
+    print("worked:", categories_list)
+
+    os.environ['AWS_ACCESS_KEY_ID'] = ""
+    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+    
+    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+
+    prompt = "Recombine the following list of categories by similarity in specific topic and regroup and remove duplicates. Return the resulting categories only, separated by commas, with no extra text.\n"
+    for i in categories_list:
+        prompt += (i + "\n")
+    
+    formatted_prompt = f'Human: {prompt}\nAssistant:'
+
+    response = bedrock.invoke_model(
+        modelId = "anthropic.claude-v2",
+        body=json.dumps({
+            "prompt": formatted_prompt,
+            "max_tokens_to_sample": 2048,
+            "temperature": 0.7
+            })
+    )
+
+    result = json.loads(response.get("body").read())
+    report = list(change_to_list(result["completion"]))
+    print(report)
+
+    classes_collection.update_one({"class_name": class_name}, {"$set": {"report": report}})
+
+    return jsonify(report)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
