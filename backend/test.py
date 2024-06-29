@@ -18,14 +18,14 @@ def wrap():
         # generate_student_report("Dog", "Class One", "Student Two", db, questions)
         # student_exists("Dog", "Class One", "Student One", db)
         # add_teacher("Dog", "Dogs", "Dogs2", db)
-        # add_student_to_class("Dog", "Class One", "Student Two", db)
-        # generate_student_report("Dog", "Class One", "Student Two", db, questions)
+        add_student_to_class("Dog", "Class One", "Student One", db)
+        generate_student_report("Dog", "Class One", "Student One", db, questions)
         # add_class_report("Dog", "Class One", "class report", db)
         # update_student("Dog", "Class One", "Student One", "new report", db)
         # del_student("Dog", "Class One", "Student Two", db)
         # add_class("Dog", "Class One", db)
-        categories = get_class_total_categories(db, "Dog", "Class One")
-        generate_class_report("Dog", "Class One", db, categories)
+        # categories = get_class_total_categories(db, "Dog", "Class One")
+        # generate_class_report("Dog", "Class One", db, categories)
     except Exception as e:
         print(e)
         raise
@@ -57,12 +57,12 @@ def add_class(teacher, class_name, db):
 
 def add_student_to_class(teacher_id, class_name, student_id, db, report=None):
     new_class = db[teacher_id][class_name][student_id]
-    a = db[student_id]
-    b = a.find()
-    c = list(b)[0]
-    b.close()
-    student_name = c["name"]
-    insert_new = {"student id": student_id, "name": student_name, "report": report}
+    # a = db[student_id]
+    # b = a.find()
+    # c = list(b)[0]
+    # b.close()
+
+    insert_new = {"student id": student_id, "report": report}
     new_class.insert_one(insert_new)
 
 
