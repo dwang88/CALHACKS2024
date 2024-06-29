@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Class } from './types';
+import { Class, Assignment } from './types';
 import './AssignmentSelection.css';
 import axios from 'axios';
 
@@ -11,6 +11,7 @@ const AssignmentSelection = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null); // Declare pdfFile in state
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ sender: string, message: string }>>([]);
+  const [outputs, setOutputs] = useState<Array<{ image_name: string, solution_outputs: string[] }>>([]); // State for storing API response outputs
 
   useEffect(() => {
     const classes: Class[] = [
@@ -56,12 +57,17 @@ const AssignmentSelection = () => {
 
     const formData = new FormData();
     formData.append('pdf', pdfFile);
-    formData.append('user_prompt', chatInput);
 
     try {
       const response = await axios.post('http://localhost:8000/process', formData);
-      const assistantResponse = response.data.answer;
-      setChatHistory(prevHistory => [...prevHistory, { sender: 'assistant', message: assistantResponse }]);
+
+      // Detailed logging of the response object
+      console.log('Full API response:', response);
+      const apiOutputs = response.data;
+
+      // Set the outputs state with the response data
+      setOutputs(apiOutputs);
+
     } catch (error) {
       console.error('Error processing question:', error);
     }
@@ -75,7 +81,7 @@ const AssignmentSelection = () => {
         <>
           <h2>Select an Assignment for {selectedClass.name}</h2>
           <ul className="assignment-list">
-            {selectedClass.assignments.map(assign => (
+            {selectedClass.assignments.map((assign: Assignment) => (
               <li key={assign.id} onClick={() => handleAssignmentSelect(assign.pdfUrl)}>
                 {assign.name}
               </li>
@@ -114,6 +120,20 @@ const AssignmentSelection = () => {
             />
             <button onClick={handleChatSubmit}>Send</button>
           </div>
+        </div>
+      </div>
+
+      <div className="solution-output">
+        <h2>Solution Output</h2>
+        <div>
+          {outputs.map((output, index) => (
+            <div key={index}>
+              <h3>Response for {output.image_name}:</h3>
+              {output.solution_outputs.map((text, idx) => (
+                <pre key={idx}>{text}</pre>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>

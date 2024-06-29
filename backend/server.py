@@ -1,10 +1,11 @@
 import os
 import fitz
+from PIL import Image
 import base64
 import openai
 import boto3
 import json
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -49,7 +50,7 @@ def image_to_base64(image_path):
         return base64.b64encode(img_file.read()).decode('utf-8')
 
 @app.post("/process")
-async def process_pdf(pdf: UploadFile = File(...), user_prompt: str = Form(...)):
+async def process_pdf(pdf: UploadFile = File(...)):
     try:
         # Save the uploaded PDF file
         pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(pdf.filename))
@@ -59,11 +60,8 @@ async def process_pdf(pdf: UploadFile = File(...), user_prompt: str = Form(...))
         # Convert PDF to images
         pdf_to_images(pdf_path, OUTPUT_FOLDER)
 
-        # Process images and generate response
         results = []
         image_files = sorted(os.listdir(OUTPUT_FOLDER))
-        latex_transcriptions = []
-
         for image_name in image_files:
             image_path = os.path.join(OUTPUT_FOLDER, image_name)
             if os.path.isfile(image_path) and image_name.lower().endswith(('png', 'jpg', 'jpeg')):
@@ -71,46 +69,58 @@ async def process_pdf(pdf: UploadFile = File(...), user_prompt: str = Form(...))
 
                 # Call OpenAI API to transcribe image content to LaTeX
                 response = openai.chat.completions.create(
-                    model="text-davinci-003",
-                    prompt=f"Transcribe the following image to LaTeX:\n\n![Image](data:image/png;base64,{image_base64})",
-                    max_tokens=300
-                )
-
-                latex_transcription = response.choices[0].text.strip()
-                latex_transcriptions.append(latex_transcription)
-
-        # Combine all LaTeX transcriptions and user prompt for Claude
-        combined_text = "\n\n".join(latex_transcriptions) + "\n\nUser prompt: " + user_prompt
-
-        # Call AWS Bedrock API with Claude
-        bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
-        modelId = "anthropic.claude-3-haiku-20240307-v1:0"
-        accept = "application/json"
-        contentType = "application/json"
-        system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. format your answer in latex"
-
-        response = bedrock.invoke_model(
-            modelId=modelId,
-            contentType=contentType,
-            accept=accept,
-            body=json.dumps(
-                {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 1024,
-                    "messages": [
+                    model="gpt-4o",
+                    messages=[
                         {
                             "role": "user",
-                            "content": system_prompt + " " + combined_text
+                            "content": [
+                                {"type": "text", "text": "Transcribe the image (which might contain latex) to text."},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/png;base64,{image_base64}",
+                                    },
+                                },
+                            ],
                         }
-                    ]
-                }
-            )
-        )
+                    ],
+                    max_tokens=300,
+                )
 
-        result = json.loads(response.get("body").read().decode('utf-8'))
-        assistant_response = result.get("content", "")
+                user_prompt = response.choices[0].message.content.strip()
 
-        return JSONResponse(content={"answer": assistant_response})
+                # Call AWS Bedrock API
+                bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+                modelId = "anthropic.claude-3-haiku-20240307-v1:0"
+                accept = "application/json"
+                contentType = "application/json"
+                system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer."
+
+                response = bedrock.invoke_model(
+                    modelId=modelId,
+                    contentType=contentType,
+                    accept=accept,
+                    body=json.dumps(
+                        {
+                            "anthropic_version": "bedrock-2023-05-31",
+                            "max_tokens": 1024,
+                            "messages": [
+                                {
+                                    "role": "user",
+                                    "content": system_prompt + " " + user_prompt
+                                }
+                            ]
+                        }
+                    )
+                )
+
+                result = json.loads(response.get("body").read().decode('utf-8'))
+                output_list = result.get("content", [])
+
+                solution_outputs = [output["text"] for output in output_list]
+                results.append({"image_name": image_name, "solution_outputs": solution_outputs})
+
+        return JSONResponse(content=results)
 
     except Exception as e:
         print(f"Error processing PDF: {e}")
