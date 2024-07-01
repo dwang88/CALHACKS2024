@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Class, Assignment } from './types';
 import './AssignmentSelection.css';
 import axios from 'axios';
+import 'katex/dist/katex.min.css';
+import { InlineMath, BlockMath } from 'react-katex';
 
 const AssignmentSelection = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -48,6 +50,25 @@ const AssignmentSelection = () => {
         setPdfFile(file);
       });
   };
+
+
+  const renderLatex = (text: string) => {
+    // Split the text into LaTeX and non-LaTeX parts
+    const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
+    return parts.map((part, index) => {
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        // Display math
+        return <BlockMath key={index}>{part.slice(2, -2)}</BlockMath>;
+      } else if (part.startsWith('$') && part.endsWith('$')) {
+        // Inline math
+        return <InlineMath key={index}>{part.slice(1, -1)}</InlineMath>;
+      } else {
+        // Regular text
+        return <span key={index}>{part}</span>;
+      }
+    });
+  };
+
 
   const handleChatSubmit = async () => {
     if (!chatInput || !pdfFile) return;
@@ -107,7 +128,7 @@ const AssignmentSelection = () => {
           <div className="chat-history">
             {chatHistory.map((chat, index) => (
               <div key={index} className={`chat-message ${chat.sender}`}>
-                <span>{chat.message}</span>
+                {renderLatex(chat.message)}
               </div>
             ))}
           </div>
@@ -130,7 +151,7 @@ const AssignmentSelection = () => {
             <div key={index}>
               <h3>Response for {output.image_name}:</h3>
               {output.solution_outputs.map((text, idx) => (
-                <pre key={idx}>{text}</pre>
+                <div key={idx}>{renderLatex(text)}</div>
               ))}
             </div>
           ))}

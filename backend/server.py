@@ -15,6 +15,7 @@ load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
+print(OPENAI_API_KEY)
 
 app = FastAPI()
 
@@ -47,6 +48,7 @@ def pdf_to_images(pdf_path, output_folder):
 
 def image_to_base64(image_path):
     with open(image_path, 'rb') as img_file:
+        print("Images have been successfully converted to text")
         return base64.b64encode(img_file.read()).decode('utf-8')
 
 @app.post("/process")
@@ -94,7 +96,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
                 modelId = "anthropic.claude-3-haiku-20240307-v1:0"
                 accept = "application/json"
                 contentType = "application/json"
-                system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer."
+                system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. Format your answer in LaTeX."
 
                 response = bedrock.invoke_model(
                     modelId=modelId,
