@@ -7,6 +7,7 @@ const SolutionOutput: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setPdfFile(event.target.files[0]);
+      setOutputs([]);  // Reset outputs when a new file is selected
     }
   };
 

@@ -21,7 +21,7 @@ const AssignmentSelection = () => {
         id: 1,
         name: 'Math 101',
         assignments: [
-          { id: 1, name: 'Homework 1', content: 'Solve integrals', pdfUrl: '/pdfs/math101_hw1.pdf' },
+          { id: 1, name: 'Homework 1', content: 'Solve integrals', pdfUrl: '/pdfs/ptest.pdf' },
           { id: 2, name: 'Homework 2', content: 'Solve differentials', pdfUrl: '/pdfs/math101_hw2.pdf' }
         ]
       },

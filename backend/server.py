@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+import shutil
 
 load_dotenv()
 
@@ -50,6 +51,11 @@ def image_to_base64(image_path):
     with open(image_path, 'rb') as img_file:
         print("Images have been successfully converted to text")
         return base64.b64encode(img_file.read()).decode('utf-8')
+    
+def clear_output_folder(output_folder):
+    if os.path.exists(output_folder):
+        shutil.rmtree(output_folder)
+    os.makedirs(output_folder)
 
 @app.post("/process")
 async def process_pdf(pdf: UploadFile = File(...)):
@@ -58,6 +64,9 @@ async def process_pdf(pdf: UploadFile = File(...)):
         pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(pdf.filename))
         with open(pdf_path, "wb") as buffer:
             buffer.write(await pdf.read())
+
+        # Clear the output folder before processing new PDF
+        clear_output_folder(OUTPUT_FOLDER)
 
         # Convert PDF to images
         pdf_to_images(pdf_path, OUTPUT_FOLDER)
@@ -86,7 +95,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
                             ],
                         }
                     ],
-                    max_tokens=300,
+                    max_tokens=75,
                 )
 
                 user_prompt = response.choices[0].message.content.strip()
@@ -105,7 +114,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
                     body=json.dumps(
                         {
                             "anthropic_version": "bedrock-2023-05-31",
-                            "max_tokens": 1024,
+                            "max_tokens": 256,
                             "messages": [
                                 {
                                     "role": "user",
