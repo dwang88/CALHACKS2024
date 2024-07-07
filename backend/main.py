@@ -9,32 +9,48 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-uri = os.getenv("DB_URL", "mongodb+srv://anniesy2:Calhacks2024@teachers.6rnbrpj.mongodb.net/?retryWrites=true&w=majority&appName=Teachers")
+uri = os.getenv("DB_URL", "") #insert mongodb uri as second parameter
 
 client = MongoClient(uri, server_api=ServerApi('1'))
-db = client['TestDB']
+db = client['canvas-gpt-db']
 teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
 
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify(message="Hello from Flask!")
+student_schema = {
+    '_id': ObjectId,
+    'student_id': str, #firebase uid
+    'name': str,
+    'classes': list,
+    'report': list,
+    'questions': list
+}
 
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify(message="Hello from Flask!")
+teacher_schema = {
+    '_id': ObjectId,
+    'teacher_id': str, # firebase uid
+    'name': str,
+    'students': [],
+    'classes': []
+}
 
+class_schema = {
+    '_id': ObjectId,
+    'class_id': str,
+    'name': str,
+    'students': [],
+    'class_report': str
+}
 
-# add a student - need to pass a student object into this function
-# student in json format: {
-#                           name: {name - string},
-#                           report: {report - array}
-#                       }
 @app.route('/add_student', methods=['POST'])
 def add_student():
     try:
         student_data = request.get_json()
+        student_id = student_data['student_id']
+
+        existing_student = students_collection.find_one({"student_id": student_id})
+        if existing_student:
+            return jsonify({"message": "Student already exists!", "student_id": student_id}), 200
 
         result = students_collection.insert_one(student_data)
 
@@ -43,17 +59,16 @@ def add_student():
         return jsonify({"error": str(e)}), 500
     
 
-"""
-input for this method should be:
-{
-    "name": {name},
-    "classes": Array of classes
-}
-"""
 @app.route('/add_teacher', methods=['POST'])
 def add_teacher():
     try:
         teacher_data = request.get_json()
+        teacher_id = teacher_data['teacher_id']
+
+        existing_teacher = teachers_collection.find_one({'teacher_id': teacher_id})
+        if existing_teacher:
+            return jsonify({"Message": "Teacher already exists", 
+                            "teacher_id": teacher_id}), 200
 
         result = teachers_collection.insert_one(teacher_data)
 
@@ -61,73 +76,40 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-"""
-input for this method should be:
-{
-    "teacher_id": {get the firebase uid of the teacher},
-    "class name": {name - String}
-}
-"""
-@app.route('/add_class', methods=['PATCH'])
+
+@app.route('/add_class', methods=['POST'])
 def add_class():
     try:
         class_data = request.get_json()
-        teacher_id = ObjectId(class_data['teacher_id'])
-        class_name = class_data['class_name']
-
-        teacher = teachers_collection.find_one({"_id": teacher_id})
-        if not teacher:
-            return jsonify({"error": "Student not found."}), 404
-
-        result = teachers_collection.update_one(
-            {"_id": teacher_id},
-            {"$push": {"classes": {
-                "name": class_name,
-                "report": "",
-                "struggling": [],
-            }}}
-        )
-
-        class_data['students'] = []
 
         classes_collection.insert_one(class_data)
 
-        if result.modified_count == 1:
-            return jsonify({"message": "Class added successfully!"}), 201
-        else:
-            return jsonify({"error": "Failed to add class."}), 500
+        return jsonify({"message": "Class added successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-"""
-{
-    "class_id": {MongoDB id of the class},
-    "student_id": {firebase id of the student}
-}
-"""
-@app.route('/enroll_student', methods=['PATCH'])
-def add_student_to_class():
+@app.route('/enroll_student/<class_id>/', methods=['PATCH'])
+def add_student_to_class(class_id):
     try:
         data = request.get_json()
 
         # frontend sends student id and class id
-        class_id = data['class_id']
         student_id = data['student_id']
 
-        class_obj_id = ObjectId(class_id)
-        student_obj_id = ObjectId(student_id)
+        # class_obj_id = ObjectId(class_id)
+        # student_obj_id = ObjectId(student_id)
 
-        student = students_collection.find_one({"_id": student_obj_id})
+        student = students_collection.find_one({"student_id": student_id})
         if not student:
             return jsonify({"error": "Student not found."}), 404
         class_result = classes_collection.update_one(
-            {"_id": class_obj_id},
-            {"$push": {"students": student_obj_id}} 
+            {"class_id": class_id},
+            {"$push": {"students": student_id}} 
         )
 
         student_result = students_collection.update_one(
-            {"_id": student_obj_id},
-            {"$push", {"classes": class_obj_id}}
+            {"student_id": student_id},
+            {"$push", {"classes": class_id}}
         )
         if class_result.modified_count > 0 and student_result.modified_count > 0:
             return jsonify({"message": "Student enrolled successfully.", "student_id": str(student_id)}), 200
@@ -159,7 +141,6 @@ def get_classes():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 # Get all teachers
 @app.route('/get_teachers', methods=['GET'])
 def get_teachers():
@@ -170,139 +151,170 @@ def get_teachers():
         return jsonify(teachers), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route('/add_question', methods=['PATCH'])
-def add_question():
+    
+# get all students of a teacher
+@app.route('/get_students_of_teacher/<teacher_id>/', methods=['GET'])
+def get_students_of_teacher(teacher_id):
     try:
-        data = request.get_json()
-        student_id = ObjectId(data['student_id'])
-        question = data['question']
-        target_student = students_collection.update_one(
-            {"_id":student_id},
-            {"$push": {"questions": question}}
-        )
+        teacher = teachers_collection.find_one({'teacher_id': teacher_id})
+        if not teacher:
+            return jsonify({"error": "Teacher not found"}), 404
+        students = teacher['students']
 
-        if target_student.modified_count == 0:
-            return jsonify({"error": "Class not found or report not added"}), 404
-
-        return jsonify({"message": "Question added successfully!"}), 200
+        return jsonify({"Message": "Successfully got students",
+                        "Students": students}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-@app.route('/generate_student_report', methods=['POST'])
-def generate_student_report():
-    data = request.get_json()
-    student_id = ObjectId(data['student_id'])
-    teacher_id = ObjectId(data['teacher_id'])
-    class_name = data['class_name']
-    questions_list = students_collection.find_one({"_id":student_id})['questions']
-
-    os.environ['AWS_ACCESS_KEY_ID'] = ""
-    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
-    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
-
-    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
-    prompt = f"Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
-
-    for i in questions_list:
-        prompt += (i + "\n")
-
-    formatted_prompt = f'Human: {prompt}\nAssistant:'
-
-    response = bedrock.invoke_model(
-        modelId = "anthropic.claude-v2",
-        body=json.dumps({
-            "prompt": formatted_prompt,
-            "max_tokens_to_sample": 2048,
-            "temperature": 0.7
-        })
-    )
-
-    result = json.loads(response.get("body").read())
-    categories = result['completion']
-    # categories = list(change_to_list(categories))
-
-    if categories:
-        classes = teachers_collection.find_one({"_id": teacher_id})['classes']
-
-        new = {"struggling": categories}
-        for class_n in classes:
-            if(class_n['name'] == class_name):
-                break
+@app.route('/get_classes_of_teacher/<teacher_id>/', methods=['GET'])
+def get_classes_of_teacher(teacher_id):
+    try:
+        teacher = teachers_collection.find_one({'teacher_id':teacher_id})
+        if not teacher:
+            return jsonify({"Error": "Teacher not found"}), 404
         
-        print(type(categories))
+        classes = teacher['classes']
+        return jsonify({"Message": "Successfully retreived classes",
+                        "Classes": classes}), 200
+        
+    except Exception as e:
+        return jsonify({"Error": str(e)})
 
-        new_categories = ""
 
-        for i in categories:
-            if i == "\'":
-                new_categories += '\"'
-            else:
-                new_categories += i
 
-        print(new_categories)
-        # adding the struggling categories to the class
-        report = json.loads(new_categories)
-        written_report = ""
-        for i in list(report.keys()):
-            written_report += f"{report[i]} percent of people need more help with {i}. "
-        classes_collection.update_one(
-            {"class_name": class_name},
-            {"$push": new}
-        )
 
-        # adds the indivdual student report to the student
-        students_collection.update_one(
-            {"_id": student_id},
-            {"$set": {"report": written_report}}
-        )
-        # classes.update_one({"name": class_name}, {"$set": new})
+# @app.route('/add_question', methods=['PATCH'])
+# def add_question():
+#     try:
+#         data = request.get_json()
+#         student_id = ObjectId(data['student_id'])
+#         question = data['question']
+#         target_student = students_collection.update_one(
+#             {"_id":student_id},
+#             {"$push": {"questions": question}}
+#         )
+
+#         if target_student.modified_count == 0:
+#             return jsonify({"error": "Class not found or report not added"}), 404
+
+#         return jsonify({"message": "Question added successfully!"}), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+# @app.route('/generate_student_report', methods=['POST'])
+# def generate_student_report():
+#     data = request.get_json()
+#     student_id = ObjectId(data['student_id'])
+#     teacher_id = ObjectId(data['teacher_id'])
+#     class_name = data['class_name']
+#     questions_list = students_collection.find_one({"_id":student_id})['questions']
+
+#     os.environ['AWS_ACCESS_KEY_ID'] = ""
+#     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+#     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+
+#     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+#     prompt = f"Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
+
+#     for i in questions_list:
+#         prompt += (i + "\n")
+
+#     formatted_prompt = f'Human: {prompt}\nAssistant:'
+
+#     response = bedrock.invoke_model(
+#         modelId = "anthropic.claude-v2",
+#         body=json.dumps({
+#             "prompt": formatted_prompt,
+#             "max_tokens_to_sample": 2048,
+#             "temperature": 0.7
+#         })
+#     )
+
+#     result = json.loads(response.get("body").read())
+#     categories = result['completion']
+#     # categories = list(change_to_list(categories))
+
+#     if categories:
+#         classes = teachers_collection.find_one({"_id": teacher_id})['classes']
+
+#         new = {"struggling": categories}
+#         for class_n in classes:
+#             if(class_n['name'] == class_name):
+#                 break
+        
+#         print(type(categories))
+
+#         new_categories = ""
+
+#         for i in categories:
+#             if i == "\'":
+#                 new_categories += '\"'
+#             else:
+#                 new_categories += i
+
+#         print(new_categories)
+#         # adding the struggling categories to the class
+#         report = json.loads(new_categories)
+#         written_report = ""
+#         for i in list(report.keys()):
+#             written_report += f"{report[i]} percent of people need more help with {i}. "
+#         classes_collection.update_one(
+#             {"class_name": class_name},
+#             {"$push": new}
+#         )
+
+#         # adds the indivdual student report to the student
+#         students_collection.update_one(
+#             {"_id": student_id},
+#             {"$set": {"report": written_report}}
+#         )
+#         # classes.update_one({"name": class_name}, {"$set": new})
     
-    return jsonify(class_n['report'])
+#     return jsonify(class_n['report'])
 
-@app.route('/generate_class_report', methods=['POST'])
-def generate_class_report():
-    data = request.get_json()
-    teacher_id = data["_id"]
-    class_name = data["class_name"]
-    classes = teachers_collection.find_one({"_id": ObjectId(teacher_id)})["classes"]
-    for class_n in classes:
-        if class_n["name"] == class_name:
-            break
-    categories_list = classes_collection.find_one({"class_name": class_name})["struggling"]
+# @app.route('/generate_class_report', methods=['POST'])
+# def generate_class_report():
+#     data = request.get_json()
+#     teacher_id = data["_id"]
+#     class_name = data["class_name"]
+#     classes = teachers_collection.find_one({"_id": ObjectId(teacher_id)})["classes"]
+#     for class_n in classes:
+#         if class_n["name"] == class_name:
+#             break
+#     categories_list = classes_collection.find_one({"class_name": class_name})["struggling"]
 
-    os.environ['AWS_ACCESS_KEY_ID'] = ""
-    os.environ["AWS_SECRET_ACCESS_KEY"] = ""
-    os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
+#     os.environ['AWS_ACCESS_KEY_ID'] = ""
+#     os.environ["AWS_SECRET_ACCESS_KEY"] = ""
+#     os.environ["AWS_DEFAULT_REGION"] = 'us-east-1'
     
-    bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
+#     bedrock = boto3.client(service_name="bedrock-runtime", region_name='us-east-1')
 
-    prompt = "Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
-    for i in categories_list:
-        prompt += (i + "\n")
+#     prompt = "Categorize the following questions into very specific subtopics. Find the percentage of each subtopic, and give me a dictionary where the subtopic is the key and the percentage is the value.Return only the dictionary with no additional text.\n"
+#     for i in categories_list:
+#         prompt += (i + "\n")
     
-    formatted_prompt = f'Human: {prompt}\nAssistant:'
+#     formatted_prompt = f'Human: {prompt}\nAssistant:'
 
-    response = bedrock.invoke_model(
-        modelId = "anthropic.claude-v2",
-        body=json.dumps({
-            "prompt": formatted_prompt,
-            "max_tokens_to_sample": 2048,
-            "temperature": 0.7
-            })
-    )
+#     response = bedrock.invoke_model(
+#         modelId = "anthropic.claude-v2",
+#         body=json.dumps({
+#             "prompt": formatted_prompt,
+#             "max_tokens_to_sample": 2048,
+#             "temperature": 0.7
+#             })
+#     )
 
-    result = json.loads(response.get("body").read())
-    report = json.loads(result["completion"])
-    written_report = ""
-    for i in list(report.keys()):
-        written_report += f"{report[i]} percent of people need more help with {i}. "
-    print(written_report)
+#     result = json.loads(response.get("body").read())
+#     report = json.loads(result["completion"])
+#     written_report = ""
+#     for i in list(report.keys()):
+#         written_report += f"{report[i]} percent of people need more help with {i}. "
+#     print(written_report)
 
-    classes_collection.update_one({"class_name": class_name}, {"$set": {"report": written_report}})
+#     classes_collection.update_one({"class_name": class_name}, {"$set": {"report": written_report}})
 
-    return jsonify(report)
+#     return jsonify(report)
 
 
 if __name__ == '__main__':

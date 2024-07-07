@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { SignInWithGoogle } from './firebaseConfig';
+import { onLog } from 'firebase/app';
+import { METHODS } from 'http';
 
 const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
@@ -15,7 +17,6 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-        onLogin();
 
         const dummyClasses = [
           {
@@ -34,7 +35,22 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           }
         ];
 
-        navigate('/student', { state: { classes: dummyClasses } });
+        const request = await fetch("http://localhost:5000/add_student", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            student_id: user.uid,
+            name: user.displayName,
+            classes: [],
+            report: [],
+            questions: []
+          })
+        }).then(() => {
+          onLogin();
+          navigate('/student', { state: { classes: dummyClasses } });
+        })
       }
     } catch (error) {
       console.error(error);
@@ -45,8 +61,21 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-        onLogin();
-        navigate('/teacher'); // Assuming you have a TeacherDashboard
+        const request = await fetch("http://localhost:5000/add_teacher", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            teacher_id: user.uid,
+            name: user.displayName,
+            students: [],
+            classes: []
+          })
+        }).then(() => {
+          onLogin();
+          navigate('/teacher'); // Assuming you have a TeacherDashboard
+        })
       }
     } catch (error) {
       console.error(error);
