@@ -66,6 +66,7 @@ const ClassPage = () => {
 
     const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedStudent(event.target.value);
+        console.log(selectedStudent)
     };
 
     const generateStudentReport = async (studentId: string) => {
@@ -82,6 +83,7 @@ const ClassPage = () => {
             }
 
             const data = await response.json()
+            console.log(data)
             setReport(data.Report);
         } catch (error) {
             console.error(error)

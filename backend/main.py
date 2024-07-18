@@ -244,6 +244,10 @@ def get_classes_of_teacher(teacher_id):
 def generate_student_report(student_id):
     try:
         questions_list = students_collection.find_one({'student_id': student_id})['questions']
+        
+        if len(questions_list) == 0:
+            return jsonify({"Report": "No questions were asked by the student"})
+        
         questions = ""
         for question in questions_list:
             questions += question + " "
@@ -277,6 +281,17 @@ def generate_student_report(student_id):
         else:
             return jsonify({"error": "Failed to add report"}), 400
 
+    except Exception as e:
+        return jsonify({"Error": str(e)})
+
+@app.route('/get_questions/<student_id>/', methods=['GET'])
+def get_questions(student_id):
+    try:
+        questions_list = students_collection.find_one({'student_id': student_id})['questions']
+        print(questions_list)
+        if len(questions_list) == 0:
+            return jsonify({"Message": "No questions"})
+        return jsonify({"Questions": questions_list})
     except Exception as e:
         return jsonify({"Error": str(e)})
 
