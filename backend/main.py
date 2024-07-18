@@ -4,12 +4,16 @@ from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import os
+from dotenv import load_dotenv
 import json
+from openai import OpenAI
+
 
 app = Flask(__name__)
 CORS(app)
 
-uri = os.getenv("DB_URL", "") #insert mongodb uri as second parameter
+load_dotenv()
+uri = os.getenv("DB_URL")
 
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['canvas-gpt-db']
@@ -39,7 +43,8 @@ class_schema = {
     'class_id': str,
     'name': str,
     'students': [],
-    'class_report': str
+    'class_report': str,
+    'Teacher': str # teacher_id
 }
 
 @app.route('/add_student', methods=['POST'])
@@ -76,7 +81,6 @@ def add_teacher():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-
 @app.route('/add_class', methods=['POST'])
 def add_class():
     try:
@@ -96,12 +100,19 @@ def add_student_to_class(class_id):
         # frontend sends student id and class id
         student_id = data['student_id']
 
-        # class_obj_id = ObjectId(class_id)
-        # student_obj_id = ObjectId(student_id)
-
         student = students_collection.find_one({"student_id": student_id})
         if not student:
             return jsonify({"error": "Student not found."}), 404
+        
+        existing_class = classes_collection.find_one({"class_id": class_id})
+        teacher_id = existing_class['Teacher']
+        if not existing_class:
+            return jsonify({"error": "Class does not exist"})
+        
+        teacher = teachers_collection.find_one({"teacher_id": teacher_id})
+        if not teacher:
+            return jsonify({"error": "Teacher does not exist"})
+        
         class_result = classes_collection.update_one(
             {"class_id": class_id},
             {"$push": {"students": student_id}} 
@@ -109,15 +120,25 @@ def add_student_to_class(class_id):
 
         student_result = students_collection.update_one(
             {"student_id": student_id},
-            {"$push", {"classes": class_id}}
+            {"$push": {"classes": class_id}}
         )
-        if class_result.modified_count > 0 and student_result.modified_count > 0:
+
+        teacher_result = teachers_collection.update_one(
+            {"teacher_id": teacher_id},
+            {"$push": {"students": student_id}}
+        )
+
+        if class_result.modified_count > 0 and student_result.modified_count > 0 and teacher_result.modified_count > 0:
             return jsonify({"message": "Student enrolled successfully.", "student_id": str(student_id)}), 200
         else:
             return jsonify({"error": "Failed to enroll student in class."}), 400
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+# def enroll_teacher_in_class:
+# will add a teacher as Teacher of class
+# and add the class to the teacher's class[] array
 
 #get all students
 @app.route('/get_students', methods=['GET'])
@@ -152,6 +173,30 @@ def get_teachers():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route('/get_class/<class_id>/', methods=['GET'])
+def get_class(class_id):
+    try:
+        specClass = classes_collection.find_one({'class_id': class_id})
+        if not specClass:
+            return jsonify({"error": "Class not found"}), 404
+        specClass['_id'] = str(specClass['_id'])
+        return jsonify({"Message": "Successfully got class " + class_id,
+                        "Class": specClass}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_student/<student_id>/', methods=['GET'])
+def get_student(student_id):
+    try:
+        student = students_collection.find_one({'student_id': student_id})
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+        student['_id'] = str(student['_id'])
+        return jsonify({"Message": "Successfully got student " + student_id,
+                        "Student": student}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 # get all students of a teacher
 @app.route('/get_students_of_teacher/<teacher_id>/', methods=['GET'])
 def get_students_of_teacher(teacher_id):
@@ -160,9 +205,16 @@ def get_students_of_teacher(teacher_id):
         if not teacher:
             return jsonify({"error": "Teacher not found"}), 404
         students = teacher['students']
+        students_list = []
+
+        for student in students:
+            new_student = students_collection.find_one({"student_id": student})
+            if new_student:
+                new_student['_id'] = str(new_student['_id'])
+                students_list.append(new_student)
 
         return jsonify({"Message": "Successfully got students",
-                        "Students": students}), 200
+                        "Students": students_list}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -174,14 +226,74 @@ def get_classes_of_teacher(teacher_id):
             return jsonify({"Error": "Teacher not found"}), 404
         
         classes = teacher['classes']
+        classes_list = []
+
+        for class_id in classes:
+            new_class = classes_collection.find_one({"class_id": class_id})
+            if new_class:
+                new_class['_id'] = str(new_class['_id'])
+                classes_list.append(new_class)
+
         return jsonify({"Message": "Successfully retreived classes",
-                        "Classes": classes}), 200
+                        "Classes": classes_list}), 200
         
     except Exception as e:
         return jsonify({"Error": str(e)})
 
+@app.route('/generate_student_report/<student_id>/', methods=['PATCH'])
+def generate_student_report(student_id):
+    try:
+        questions_list = students_collection.find_one({'student_id': student_id})['questions']
+        
+        if len(questions_list) == 0:
+            return jsonify({"Report": "No questions were asked by the student"})
+        
+        questions = ""
+        for question in questions_list:
+            questions += question + " "
+        
+        api_key = os.getenv('OPENAI_API_KEY')
 
+        client = OpenAI(
+            api_key=api_key
+        )
 
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", 
+                 "content": "You are an educational assistant that helps teachers understand what their students are struggling in"},
+                {"role": "user", 
+                 "content": "Generate a concise 3-4 sentence report about a student's progress based on the following questions they've asked: " + questions}
+            ]
+        )
+
+        report = completion.choices[0].message.content
+
+        result = students_collection.update_one(
+            {"student_id": student_id},
+            {"$push": {"report": report}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"message": "Successfully added report", 
+                            "Report": report}), 200
+        else:
+            return jsonify({"error": "Failed to add report"}), 400
+
+    except Exception as e:
+        return jsonify({"Error": str(e)})
+
+@app.route('/get_questions/<student_id>/', methods=['GET'])
+def get_questions(student_id):
+    try:
+        questions_list = students_collection.find_one({'student_id': student_id})['questions']
+        print(questions_list)
+        if len(questions_list) == 0:
+            return jsonify({"Message": "No questions"})
+        return jsonify({"Questions": questions_list})
+    except Exception as e:
+        return jsonify({"Error": str(e)})
 
 # @app.route('/add_question', methods=['PATCH'])
 # def add_question():

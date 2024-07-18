@@ -11,6 +11,7 @@ import StudentDashboard from './StudentDashboard';
 import TeacherDashboard from './TeacherDashboard';
 import ProtectedRoute from './ProtectedRoute';
 import AssignmentSelection from './AssignmentSelection';
+import ClassPage from './pages/ClassPage';
 
 function App() {
   const [message, setMessage] = useState('');
@@ -47,6 +48,11 @@ function App() {
           <Route path="/assignments/:classId" element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <AssignmentSelection />
+            </ProtectedRoute>
+          } />
+          <Route path="/classes/:classId" element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <ClassPage />
             </ProtectedRoute>
           } />
         </Routes>
