@@ -80,7 +80,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
 
                 # Call OpenAI API to transcribe image content to LaTeX
                 response = openai.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=[
                         {
                             "role": "user",
@@ -95,7 +95,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
                             ],
                         }
                     ],
-                    max_tokens=75,
+                    max_tokens=256,
                 )
 
                 user_prompt = response.choices[0].message.content.strip()
@@ -105,7 +105,7 @@ async def process_pdf(pdf: UploadFile = File(...)):
                 modelId = "anthropic.claude-3-haiku-20240307-v1:0"
                 accept = "application/json"
                 contentType = "application/json"
-                system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. Format your answer in LaTeX."
+                system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. Keep your output relatively short. Format your answer in LaTeX."
 
                 response = bedrock.invoke_model(
                     modelId=modelId,

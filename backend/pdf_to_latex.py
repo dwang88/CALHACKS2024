@@ -45,7 +45,7 @@ for image_name in image_files:
         image_base64 = image_to_base64(image_path)
 
         response = openai.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -79,7 +79,7 @@ for image_name in image_files:
 
         accept = "application/json"
         contentType = "application/json"
-        system_prompt = "You are a helpful assistant. Do not give the user the answer directly, but guide them towards finding the answer. format your answer in latex"
+        system_prompt = "Do not give the user the answer directly, but guide them towards finding the answer. Keep your output relatively short. Format your answer in latex"
 
         response = bedrock.invoke_model(
             modelId=modelId,

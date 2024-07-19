@@ -259,7 +259,7 @@ def generate_student_report(student_id):
         )
 
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", 
                  "content": "You are an educational assistant that helps teachers understand what their students are struggling in"},
