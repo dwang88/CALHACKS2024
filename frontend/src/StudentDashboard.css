@@ -6,9 +6,35 @@
 
 .student-dashboard h2 {
   margin-bottom: 20px;
-  color: #fff;
+  color: #141414;
   font-size: 2rem;
   font-weight: 600;
+}
+
+.add-class-form {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.add-class-form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.add-class-form button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-class-form button:hover {
+  background-color: #45a049;
 }
 
 .class-grid {
@@ -33,7 +59,7 @@
 }
 
 .class-card:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .class-card h3 {

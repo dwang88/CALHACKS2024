@@ -17,7 +17,7 @@
   }
   
   .login-page button {
-    padding: 2rem 4rem;
+    padding: 1.5rem 3.5rem;
     background-color: #333;
     color: white;
     border: none;
@@ -70,4 +70,15 @@
   
   .login-page h2 {
     color: #333;
+  }
+
+  .login-button-container {
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.3s ease, transform 0.5s ease;
+  }
+  
+  .login-button-container.show {
+    opacity: 1;
+    transform: scale(1);
   }

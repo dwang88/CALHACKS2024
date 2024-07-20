@@ -5,10 +5,13 @@ import { SignInWithGoogle } from './firebaseConfig';
 
 const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
+  const [showButton, setShowButton] = useState(false);
   const navigate = useNavigate();
 
   const handleUserType = (type: string) => {
     setUserType(type);
+    setShowButton(false);
+    setTimeout(() => setShowButton(true), 50);
   };
 
   const handleStudentLogin = async () => {
@@ -89,14 +92,11 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
           <p>I'm a teacher</p>
         </div>
       </div>
-      {userType === 'student' && (
-        <div>
-          <button onClick={handleStudentLogin}>Sign In with Google</button>
-        </div>
-      )}
-      {userType === 'teacher' && (
-        <div>
-          <button onClick={handleTeacherLogin}>Sign In with Google</button>
+      {userType && (
+        <div className={`login-button-container ${showButton ? 'show' : ''}`}>
+          <button onClick={userType === 'student' ? handleStudentLogin : handleTeacherLogin}>
+            Sign In with Google
+          </button>
         </div>
       )}
     </div>
