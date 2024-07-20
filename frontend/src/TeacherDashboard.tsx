@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './TeacherDashboard.css';
 import { getAuth } from 'firebase/auth';
-import StudentDashboard from './StudentDashboard';
 import ClassCard from './components/ClassCard';
 
 export type Student = {
@@ -20,64 +19,91 @@ export type Class = {
 }
 
 const TeacherDashboard: React.FC = () => {
-
-    // const cards = [
-    //     { id: 1, title: 'Students Enrolled', content: '32' },
-    //     { id: 2, title: 'Most % Help Rate', content: 'Integrals' },
-    //     { id: 3, title: 'Classes Taught', content: '3' },
-    //     { id: 4, title: 'Average Test Score', content: '87%' },
-    //     { id: 5, title: 'Upcoming Assignments', content: 'Physics Quiz' },
-    //     { id: 6, title: 'Recent Feedback', content: 'Positive comments from parents' }
-    // ];
-
     const auth = getAuth();
-    const [classes,setClasses] = useState<Class[]>([]);
+    const [classes, setClasses] = useState<Class[]>([]);
+    const [studentIdToAdd, setStudentIdToAdd] = useState('');
+
+    const fetchClasses = async () => {
+        const uid = auth.currentUser?.uid;
+        if(!uid) {
+            console.error("No user logged in");
+            return;
+        }
+        const endpoint = `http://localhost:5000/get_classes_of_teacher/${uid}/`;
+        try {
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if(!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            const data = await response.json();
+            setClasses(data.Classes);
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    };
 
     useEffect(() => {
-        const fetchClasses = async () => {
+        fetchClasses();
+    }, []);
 
-            const uid = auth.currentUser?.uid;
-
-            if(!uid) {
-                console.error("No user logged in");
-                return;
-            }
-
-            const endpoint = `http://localhost:5000/get_classes_of_teacher/${uid}/`;
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                if(!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-
-                const data = await response.json();
-
-                setClasses(data.Classes);
-            } catch (error) {
-                console.error('Fetch error:', error);
-            }
+    const handleAddStudent = async (classId: string) => {
+        if (!studentIdToAdd) {
+            alert('Please enter a student ID');
+            return;
         }
 
-        fetchClasses();
-    }, [])
+        try {
+            const response = await fetch(`http://localhost:5000/enroll_student/${classId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ student_id: studentIdToAdd }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add student');
+            }
+
+            const result = await response.json();
+            alert(result.message);
+            setStudentIdToAdd('');
+            // Refresh the class list
+            fetchClasses();
+        } catch (error) {
+            console.error('Error adding student:', error);
+            alert('Failed to add student. Please try again.');
+        }
+    };
 
     return (
-      <div>
-        <h1 className='teacher'>Teacher Dashboard</h1>
-        <div className="dashboard">
-            <div className="card-grid">
-                {classes.map((specClass) => (
-                    <div key={specClass.class_id} className="card">
-                        <ClassCard specClass={specClass} />
-                    </div>
-                ))}
+        <div>
+            <h1 className='teacher'>Teacher Dashboard</h1>
+            <div className="dashboard">
+                <div className="card-grid">
+                    {classes.map((specClass) => (
+                        <div key={specClass.class_id} className="card">
+                            <ClassCard specClass={specClass} />
+                            <div className="add-student-form">
+                                <input
+                                    type="text"
+                                    value={studentIdToAdd}
+                                    onChange={(e) => setStudentIdToAdd(e.target.value)}
+                                    placeholder="Enter Student ID"
+                                />
+                                <button onClick={() => handleAddStudent(specClass.class_id)}>
+                                    Add Student
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
         </div>
     );
 };
