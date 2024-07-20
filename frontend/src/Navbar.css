@@ -12,7 +12,7 @@
   }
   
   .logo a {
-    color: white;
+    color: #202020;
     text-decoration: none;
     font-size: 1.5rem;
     font-weight: bold;
@@ -30,7 +30,7 @@
   }
   
   .nav-links a {
-    color: white;
+    color: #202020;
     text-decoration: none;
     font-size: 1rem;
     transition: color 0.3s ease;

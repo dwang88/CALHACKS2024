@@ -1,32 +1,50 @@
 .student-dashboard {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 800px;
-    margin: 20px auto;
-  }
-  
-  .student-dashboard h2 {
-    margin-bottom: 20px;
-    color: #333;
-  }
-  
-  .class-list {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  .class-list li {
-    padding: 10px;
-    margin: 10px 0;
-    background-color: #eaeaea;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .class-list li:hover {
-    background-color: #ddd;
-  }
-  
+  padding: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+}
+
+.student-dashboard h2 {
+  margin-bottom: 20px;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.class-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.class-card:hover {
+  transform: scale(1.05);
+}
+
+.class-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.class-card p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}

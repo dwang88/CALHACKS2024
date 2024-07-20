@@ -6,10 +6,13 @@ const Hero: React.FC = () => {
   return (
     <section className="hero">
       <div className="container">
-        <h1>Personalized Learning for Students, Insightful Teaching for Educators</h1>
+        <div className="text">
+          <h1>AI for Students</h1>
+          <h1>Insights for Educators</h1>
+        </div>
         <div>
           <Link to="/login">
-            <button className="btn-primary">Get Started</button>
+            <button className="btn-primary">Get Started →</button>
           </Link>
         </div>
       </div>

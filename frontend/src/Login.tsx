@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { SignInWithGoogle } from './firebaseConfig';
-import { onLog } from 'firebase/app';
-import { METHODS } from 'http';
 
 const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
@@ -17,7 +15,6 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-
         const dummyClasses = [
           {
             id: 1,
@@ -34,8 +31,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             ]
           }
         ];
-
-        const request = await fetch("http://localhost:5000/add_student", {
+        await fetch("http://localhost:5000/add_student", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -47,10 +43,9 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             report: [],
             questions: []
           })
-        }).then(() => {
-          onLogin();
-          navigate('/student', { state: { classes: dummyClasses } });
-        })
+        });
+        onLogin();
+        navigate('/student', { state: { classes: dummyClasses } });
       }
     } catch (error) {
       console.error(error);
@@ -61,7 +56,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-        const request = await fetch("http://localhost:5000/add_teacher", {
+        await fetch("http://localhost:5000/add_teacher", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -72,10 +67,9 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             students: [],
             classes: []
           })
-        }).then(() => {
-          onLogin();
-          navigate('/teacher'); // Assuming you have a TeacherDashboard
-        })
+        });
+        onLogin();
+        navigate('/teacher');
       }
     } catch (error) {
       console.error(error);
@@ -84,24 +78,24 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 
   return (
     <div className="login-page">
-      {userType === null && (
-        <div>
-          <h2>Are you a Student or Teacher?</h2>
-          <button className='sbut' onClick={() => handleUserType('student')}>Student</button>
-          <button className='tbut' onClick={() => handleUserType('teacher')}>Teacher</button>
+      <h2>Pick your role</h2>
+      <div className="role-selection">
+        <div className="role-card" onClick={() => handleUserType('student')}>
+          <img src="https://cdn-icons-png.flaticon.com/512/2784/2784403.png" alt="Student" />
+          <p>I'm a student</p>
         </div>
-      )}
-
+        <div className="role-card" onClick={() => handleUserType('teacher')}>
+          <img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png" alt="Teacher" />
+          <p>I'm a teacher</p>
+        </div>
+      </div>
       {userType === 'student' && (
         <div>
-          <p>Student Login</p>
           <button onClick={handleStudentLogin}>Sign In with Google</button>
         </div>
       )}
-
       {userType === 'teacher' && (
         <div>
-          <p>Teacher Login</p>
           <button onClick={handleTeacherLogin}>Sign In with Google</button>
         </div>
       )}

@@ -42,19 +42,6 @@ const SolutionOutput: React.FC = () => {
 
   return (
     <div>
-      <h1>Upload a PDF</h1>
-      <input type="file" accept="application/pdf" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload and Process</button>
-      <div>
-        {outputs.map((output, index) => (
-          <div key={index}>
-            <h2>Response for {output.image_name}:</h2>
-            {output.solution_outputs.map((text, idx) => (
-              <pre key={idx}>{text}</pre>
-            ))}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };

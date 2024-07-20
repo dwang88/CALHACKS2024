@@ -35,13 +35,14 @@ const StudentDashboard = () => {
   return (
     <div className="student-dashboard">
       <h2>Select a Class</h2>
-      <ul className="class-list">
+      <div className="class-grid">
         {classes.map(cls => (
-          <li key={cls.id} onClick={() => handleClassSelect(cls.id)}>
-            {cls.name}
-          </li>
+          <div key={cls.id} className="class-card" onClick={() => handleClassSelect(cls.id)}>
+            <h3>{cls.name}</h3>
+            <p>{cls.assignments.length} assignments</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

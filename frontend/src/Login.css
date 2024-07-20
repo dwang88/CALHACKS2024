@@ -14,21 +14,60 @@
     margin-bottom: 1rem;
     font-size: 2rem;
     color: #fff;
-
   }
   
   .login-page button {
-    padding: 0.5rem 1rem;
+    padding: 2rem 4rem;
     background-color: #333;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 4px;
     transition: background-color 0.3s ease;
-    margin: 1rem;
+    margin: 2rem;
+    font-size: 16px;
+
   }
   
   .login-page button:hover {
     background-color: #555;
   }
   
+  .role-selection {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .role-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    width: 200px;
+  }
+  
+  .role-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .role-card img {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+  
+  .role-card p {
+    color: #333;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+  
+  .login-page h2 {
+    color: #333;
+  }
