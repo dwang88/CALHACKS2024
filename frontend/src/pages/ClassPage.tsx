@@ -137,50 +137,59 @@ const ClassPage = () => {
         <div className="popup-overlay">
           <div className="popup">
             <h2>{selectedStudent.name}</h2>
-            <p>Student ID: {selectedStudent.student_id}</p>
-            <div className="past-reports">
-              <h3>Past Reports</h3>
-              {selectedStudent.report && selectedStudent.report.length > 0 ? (
-                <>
-                  <p>{selectedStudent.report[selectedStudent.report.length - 1]}</p>
-                  {selectedStudent.report.length > 1 && (
-                    <button onClick={toggleReports} className="view-more-button">
-                      {showAllReports ? "Hide" : "View More"}
-                    </button>
-                  )}
-                  {showAllReports && (
-                    <ul>
-                      {selectedStudent.report.slice(0, -1).reverse().map((r, index) => (
-                        <li key={index}>{r}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <p>No past reports available.</p>
-              )}
-            </div>
-            <div className="past-questions">
-              <h3>Past Questions</h3>
-              {selectedStudent.questions && selectedStudent.questions.length > 0 ? (
-                <>
-                  <p>{selectedStudent.questions[selectedStudent.questions.length - 1]}</p>
-                  {selectedStudent.questions.length > 1 && (
-                    <button onClick={toggleQuestions} className="view-more-button">
-                      {showAllQuestions ? "Hide" : "View More"}
-                    </button>
-                  )}
-                  {showAllQuestions && (
-                    <ul>
-                      {selectedStudent.questions.slice(0, -1).reverse().map((q, index) => (
-                        <li key={index}>{q}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <p>No past questions available.</p>
-              )}
+            <div className="student-details-grid">
+              <div className="classCard">
+                <h3>Struggle Score</h3>
+                <p className="struggleScore">{selectedStudent.questions.length}</p>
+              </div>
+              <div className="classCard">
+                <h3>Student ID</h3>
+                <p>{selectedStudent.student_id}</p>
+              </div>
+              <div className="classCard">
+                <h3>Past Reports</h3>
+                {selectedStudent.report && selectedStudent.report.length > 0 ? (
+                  <>
+                    <p>{selectedStudent.report[selectedStudent.report.length - 1]}</p>
+                    {selectedStudent.report.length > 1 && (
+                      <button onClick={toggleReports} className="view-more-button">
+                        {showAllReports ? "Hide" : "View More"}
+                      </button>
+                    )}
+                    {showAllReports && (
+                      <ul>
+                        {selectedStudent.report.slice(0, -1).reverse().map((r, index) => (
+                          <li key={index}>{r}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <p>No past reports available.</p>
+                )}
+              </div>
+              <div className="classCard">
+                <h3>Past Questions</h3>
+                {selectedStudent.questions && selectedStudent.questions.length > 0 ? (
+                  <>
+                    <p>{selectedStudent.questions[selectedStudent.questions.length - 1]}</p>
+                    {selectedStudent.questions.length > 1 && (
+                      <button onClick={toggleQuestions} className="view-more-button">
+                        {showAllQuestions ? "Hide" : "View More"}
+                      </button>
+                    )}
+                    {showAllQuestions && (
+                      <ul>
+                        {selectedStudent.questions.slice(0, -1).reverse().map((q, index) => (
+                          <li key={index}>{q}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <p>No past questions available.</p>
+                )}
+              </div>
             </div>
             <button onClick={() => generateStudentReport(selectedStudent.student_id)} className="generate-report-button">
               Generate Report

@@ -57,9 +57,41 @@
   padding: 40px;
   border-radius: 8px;
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.student-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.classCard {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 200px; /* Set a fixed height */
+  overflow-y: auto; /* Add scrolling for overflow content */
+}
+
+.classCard h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.classCard p {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.struggleScore {
+  font-size: 40px;
+  font-weight: 600;
 }
 
 .generate-report-button {
@@ -100,7 +132,6 @@
   background-color: #5a6268;
 }
 
-
 .search-bar {
   margin-bottom: 20px;
   text-align: center;
@@ -121,11 +152,6 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.past-reports,
-.past-questions {
-  margin-bottom: 20px;
-}
-
 .view-more-button {
   background-color: #f0f0f0;
   border: none;
@@ -133,8 +159,19 @@
   margin-top: 10px;
   cursor: pointer;
   border-radius: 4px;
+  align-self: flex-start; /* Align button to the start of the flex container */
 }
 
 .view-more-button:hover {
   background-color: #e0e0e0;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+li {
+  margin-bottom: 5px;
 }
