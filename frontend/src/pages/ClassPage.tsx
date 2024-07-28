@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Class, Student } from "../TeacherDashboard";
 import "./ClassPage.css";
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const ClassPage = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -107,6 +111,41 @@ const ClassPage = () => {
   const toggleReports = () => setShowAllReports(!showAllReports);
   const toggleQuestions = () => setShowAllQuestions(!showAllQuestions);
 
+  const calculateClassAverage = () => {
+    if (!students) return 0;
+    const totalQuestions = students.reduce((sum, student) => sum + student.questions.length, 0);
+    return totalQuestions / students.length;
+  };
+
+  const chartData = {
+    labels: ['Student', 'Class Average'],
+    datasets: [
+      {
+        label: 'Number of Questions Asked',
+        data: [selectedStudent ? selectedStudent.questions.length : 0, calculateClassAverage()],
+        backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(255, 159, 64, 0.6)'],
+        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 159, 64, 1)'],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Questions Asked',
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  };
 
   if (!specClass) {
     return <p>Loading...</p>;
@@ -140,7 +179,16 @@ const ClassPage = () => {
             <div className="student-details-grid">
               <div className="classCard">
                 <h3>Struggle Score</h3>
-                <p className="struggleScore">{selectedStudent.questions.length}</p>
+                <p className="struggleScore">
+                  {(() => {
+                    const struggleScore = (selectedStudent.questions.length * (.40) + selectedStudent.report.length * (.10)) * 100;
+                    return struggleScore.toFixed(2);
+                  })()}
+                </p>
+              </div>
+              <div className="classCard">
+                <h3>Questions Asked</h3>
+                <Bar data={chartData} options={chartOptions} />
               </div>
               <div className="classCard">
                 <h3>Student ID</h3>
