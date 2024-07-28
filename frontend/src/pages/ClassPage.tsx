@@ -181,7 +181,7 @@ const ClassPage = () => {
                 <h3>Struggle Score</h3>
                 <p className="struggleScore">
                   {(() => {
-                    const struggleScore = (selectedStudent.questions.length * (.40) + selectedStudent.report.length * (.10)) * 100;
+                    const struggleScore = (selectedStudent.questions.length * 0.40) + (selectedStudent.report.length * 0.10);
                     return struggleScore.toFixed(2);
                   })()}
                 </p>
@@ -195,47 +195,51 @@ const ClassPage = () => {
                 <p>{selectedStudent.student_id}</p>
               </div>
               <div className="classCard">
-                <h3>Past Reports</h3>
-                {selectedStudent.report && selectedStudent.report.length > 0 ? (
-                  <>
-                    <p>{selectedStudent.report[selectedStudent.report.length - 1]}</p>
-                    {selectedStudent.report.length > 1 && (
-                      <button onClick={toggleReports} className="view-more-button">
-                        {showAllReports ? "Hide" : "View More"}
-                      </button>
-                    )}
-                    {showAllReports && (
-                      <ul>
-                        {selectedStudent.report.slice(0, -1).reverse().map((r, index) => (
-                          <li key={index}>{r}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                ) : (
-                  <p>No past reports available.</p>
-                )}
+                <h3>Random Shit</h3>
+                <p>{selectedStudent.name}</p>
               </div>
-              <div className="classCard">
+            </div>
+            <div className="full-width-sections">
+            <div className="classCard full-width">
                 <h3>Past Questions</h3>
                 {selectedStudent.questions && selectedStudent.questions.length > 0 ? (
-                  <>
-                    <p>{selectedStudent.questions[selectedStudent.questions.length - 1]}</p>
+                  <div className="content-container">
+                    <ol>
+                      {selectedStudent.questions.slice(0, showAllQuestions ? undefined : 3).reverse().map((q, index) => (
+                        <li key={index}>{q}</li>
+                      ))}
+                    </ol>
                     {selectedStudent.questions.length > 1 && (
-                      <button onClick={toggleQuestions} className="view-more-button">
-                        {showAllQuestions ? "Hide" : "View More"}
-                      </button>
+                      <div className="button-container">
+                        <button onClick={toggleQuestions} className="view-more-button">
+                          {showAllQuestions ? "Hide" : "View More"}
+                        </button>
+                      </div>
                     )}
-                    {showAllQuestions && (
-                      <ul>
-                        {selectedStudent.questions.slice(0, -1).reverse().map((q, index) => (
-                          <li key={index}>{q}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
+                  </div>
                 ) : (
                   <p>No past questions available.</p>
+                )}
+              </div>
+              <div className="classCard full-width">
+                <h3>Past Reports</h3>
+                {selectedStudent.report && selectedStudent.report.length > 0 ? (
+                  <div className="content-container">
+                    <ol>
+                      {selectedStudent.report.slice(0, showAllReports ? undefined : 1).reverse().map((r, index) => (
+                        <li key={index}>{r}</li>
+                      ))}
+                    </ol>
+                    {selectedStudent.report.length > 1 && (
+                      <div className="button-container">
+                        <button onClick={toggleReports} className="view-more-button">
+                          {showAllReports ? "Hide" : "View More"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p>No past reports available.</p>
                 )}
               </div>
             </div>
