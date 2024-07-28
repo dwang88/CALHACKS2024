@@ -44,7 +44,8 @@ class_schema = {
     'name': str,
     'students': [],
     'class_report': str,
-    'Teacher': str # teacher_id
+    'Teacher': str, # teacher_id,
+    'homework': list
 }
 
 @app.route('/add_student', methods=['POST'])
@@ -294,6 +295,39 @@ def get_questions(student_id):
         return jsonify({"Questions": questions_list})
     except Exception as e:
         return jsonify({"Error": str(e)})
+
+@app.route('/upload_homework/<class_id>/', methods=['POST'])
+def upload_homework(class_id):
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            homework_metadata = {
+                'filename': filename,
+                'path': file_path
+            }
+
+            result = classes_collection.update_one(
+                {"class_id": class_id},
+                {"$push": {"homework": homework_metadata}}
+            )
+
+            if result.modified_count > 0:
+                return jsonify({"message": "Homework uploaded successfully"}), 201
+            else:
+                return jsonify({"error": "Failed to upload homework"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
