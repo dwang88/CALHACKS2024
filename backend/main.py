@@ -329,5 +329,15 @@ def upload_homework(class_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/get_homework/<class_id>/', methods=['GET'])
+def get_homework(class_id):
+    try:
+        class_data = classes_collection.find_one({'class_id': class_id})
+        if not class_data:
+            return jsonify({"error": "Class not found"}), 404
+        return jsonify({"homework": class_data.get('homework', [])}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
