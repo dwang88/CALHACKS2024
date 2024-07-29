@@ -30,7 +30,7 @@ const TeacherDashboard: React.FC = () => {
 
     const fetchClasses = async () => {
         const uid = auth.currentUser?.uid;
-        if(!uid) {
+        if (!uid) {
             console.error("No user logged in");
             return;
         }
@@ -42,7 +42,7 @@ const TeacherDashboard: React.FC = () => {
                     'Content-Type': 'application/json'
                 }
             });
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error('Network response was not ok ' + response.statusText);
             }
             const data = await response.json();
@@ -127,40 +127,46 @@ const TeacherDashboard: React.FC = () => {
         <div>
             <h1 className='teacher'>Teacher Dashboard</h1>
             <div className="dashboard">
-                <div className="card-grid">
-                    {classes.map((specClass) => (
-                        <div key={specClass.class_id} className="card">
-                            <ClassCard specClass={specClass} />
-                            <div className="add-student-form">
-                                <input
-                                    type="text"
-                                    value={studentIdToAdd}
-                                    onChange={(e) => setStudentIdToAdd(e.target.value)}
-                                    placeholder="Enter Student ID"
-                                />
-                                <button onClick={() => handleAddStudent(specClass.class_id)}>
-                                    Add Student
-                                </button>
-                            </div>
-                            <div className="upload-homework-form">
-                                <input
-                                    type="file"
-                                    onChange={handleFileChange}
-                                />
-                                <button onClick={() => handleUploadHomework(specClass.class_id)}>
-                                    Upload Homework
-                                </button>
-                            </div>
-                            {pdfUrl && (
-                                <div className="pdf-preview">
-                                    <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                                        <Viewer fileUrl={pdfUrl} />
-                                    </Worker>
+                {classes.length === 0 ? (
+                    <div className="no-classes">
+                        <h2>No classes found</h2>
+                    </div>
+                ) : (
+                    <div className="card-grid">
+                        {classes.map((specClass) => (
+                            <div key={specClass.class_id} className="card">
+                                <ClassCard specClass={specClass} />
+                                <div className="add-student-form">
+                                    <input
+                                        type="text"
+                                        value={studentIdToAdd}
+                                        onChange={(e) => setStudentIdToAdd(e.target.value)}
+                                        placeholder="Enter Student ID"
+                                    />
+                                    <button onClick={() => handleAddStudent(specClass.class_id)}>
+                                        Add Student
+                                    </button>
                                 </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
+                                <div className="upload-homework-form">
+                                    <input
+                                        type="file"
+                                        onChange={handleFileChange}
+                                    />
+                                    <button onClick={() => handleUploadHomework(specClass.class_id)}>
+                                        Upload Homework
+                                    </button>
+                                </div>
+                                {pdfUrl && (
+                                    <div className="pdf-preview">
+                                        <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                                            <Viewer fileUrl={pdfUrl} />
+                                        </Worker>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
