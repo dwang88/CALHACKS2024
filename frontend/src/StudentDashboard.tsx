@@ -51,14 +51,14 @@ const StudentDashboard = () => {
     if (!studentId) return;
 
     try {
-      const studentResponse = await fetch(`http://localhost:5000/get_student/${studentId}/`);
+      const studentResponse = await fetch(`http://127.0.0.1:5000/get_student/${studentId}/`);
       if (!studentResponse.ok) {
         throw new Error('Failed to fetch student information');
       }
       const studentData: { Student: Student } = await studentResponse.json();
 
       const classPromises = studentData.Student.classes.map(classId =>
-        fetch(`http://localhost:5000/get_class/${classId}/`).then(res => res.json())
+        fetch(`http://127.0.0.1:5000/get_class/${classId}/`).then(res => res.json())
       );
       const classesData = await Promise.all(classPromises);
 
@@ -80,7 +80,7 @@ const StudentDashboard = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/enroll_student/${classIdToAdd}/`, {
+      const response = await fetch(`http://127.0.0.1:5000/enroll_student/${classIdToAdd}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

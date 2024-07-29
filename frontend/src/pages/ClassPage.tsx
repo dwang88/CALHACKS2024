@@ -22,7 +22,7 @@ const ClassPage = () => {
   useEffect(() => {
     const fetchStudent = async (studentId: string): Promise<Student | undefined> => {
       try {
-        const response = await fetch(`http://localhost:5000/get_student/${studentId}/`, {
+        const response = await fetch(`http://127.0.0.1:5000/get_student/${studentId}/`, {
           method: "GET",
           headers: {
             'Content-Type': 'application/json'
@@ -40,7 +40,7 @@ const ClassPage = () => {
 
     const fetchClass = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/get_class/${classId}/`, {
+        const response = await fetch(`http://127.0.0.1:5000/get_class/${classId}/`, {
           method: "GET",
           headers: {
             'Content-Type': 'application/json'
@@ -76,7 +76,7 @@ const ClassPage = () => {
 
   const generateStudentReport = async (studentId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/generate_student_report/${studentId}/`, {
+      const response = await fetch(`http://127.0.0.1:5000/generate_student_report/${studentId}/`, {
         method: "PATCH",
         headers: {
           'Content-Type': 'application/json'

@@ -34,7 +34,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             ]
           }
         ];
-        await fetch("http://localhost:5000/add_student", {
+        await fetch("http://127.0.0.1:5000/add_student", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -59,7 +59,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-        await fetch("http://localhost:5000/add_teacher", {
+        await fetch("http://127.0.01:5000/add_teacher", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

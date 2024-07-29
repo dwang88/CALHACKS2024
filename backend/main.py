@@ -3,6 +3,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from werkzeug.utils import secure_filename
+import logging
+import gridfs
+
 import os
 from dotenv import load_dotenv
 import json
@@ -17,6 +21,7 @@ uri = os.getenv("DB_URL")
 
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['canvas-gpt-db']
+fs = gridfs.GridFS(db)
 teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
@@ -300,44 +305,35 @@ def get_questions(student_id):
 def upload_homework(class_id):
     try:
         if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
+            return jsonify({'message': 'No file part in the request'}), 400
 
         file = request.files['file']
         if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
+            return jsonify({'message': 'No file selected for uploading'}), 400
 
-        if file:
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+        filename = secure_filename(file.filename)
+        file_id = fs.put(file, filename=filename, metadata={"class_id": class_id})
 
-            homework_metadata = {
-                'filename': filename,
-                'path': file_path
-            }
-
-            result = classes_collection.update_one(
-                {"class_id": class_id},
-                {"$push": {"homework": homework_metadata}}
-            )
-
-            if result.modified_count > 0:
-                return jsonify({"message": "Homework uploaded successfully"}), 201
-            else:
-                return jsonify({"error": "Failed to upload homework"}), 400
-
+        return jsonify({'message': 'File successfully uploaded', 'file_id': str(file_id)}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/get_homework/<class_id>/', methods=['GET'])
-def get_homework(class_id):
+        return jsonify({'message': f'Error occurred: {str(e)}'}), 500
+    
+@app.route('/get_homework_files/<class_id>/', methods=['GET'])
+def get_homework_files(class_id):
     try:
-        class_data = classes_collection.find_one({'class_id': class_id})
-        if not class_data:
-            return jsonify({"error": "Class not found"}), 404
-        return jsonify({"homework": class_data.get('homework', [])}), 200
+        files = fs.find({"metadata.class_id": class_id})
+        file_list = [{"_id": str(file._id), "filename": file.filename} for file in files]
+        return jsonify({"homework_files": file_list}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/get_file/<file_id>', methods=['GET'])
+def get_file(file_id):
+    try:
+        file = fs.get(ObjectId(file_id))
+        return file.read(), 200, {'Content-Type': 'application/pdf'}
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
 if __name__ == '__main__':
     app.run(debug=True)
