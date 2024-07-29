@@ -3,6 +3,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from werkzeug.utils import secure_filename
+import logging
+import gridfs
+
 import os
 from dotenv import load_dotenv
 import json
@@ -17,6 +21,7 @@ uri = os.getenv("DB_URL")
 
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['canvas-gpt-db']
+fs = gridfs.GridFS(db)
 teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
@@ -44,7 +49,8 @@ class_schema = {
     'name': str,
     'students': [],
     'class_report': str,
-    'Teacher': str # teacher_id
+    'Teacher': str, # teacher_id,
+    'homework': list
 }
 
 @app.route('/add_student', methods=['POST'])
@@ -295,5 +301,39 @@ def get_questions(student_id):
     except Exception as e:
         return jsonify({"Error": str(e)})
 
+@app.route('/upload_homework/<class_id>/', methods=['POST'])
+def upload_homework(class_id):
+    try:
+        if 'file' not in request.files:
+            return jsonify({'message': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'message': 'No file selected for uploading'}), 400
+
+        filename = secure_filename(file.filename)
+        file_id = fs.put(file, filename=filename, metadata={"class_id": class_id})
+
+        return jsonify({'message': 'File successfully uploaded', 'file_id': str(file_id)}), 200
+    except Exception as e:
+        return jsonify({'message': f'Error occurred: {str(e)}'}), 500
+    
+@app.route('/get_homework_files/<class_id>/', methods=['GET'])
+def get_homework_files(class_id):
+    try:
+        files = fs.find({"metadata.class_id": class_id})
+        file_list = [{"_id": str(file._id), "filename": file.filename} for file in files]
+        return jsonify({"homework_files": file_list}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get_file/<file_id>', methods=['GET'])
+def get_file(file_id):
+    try:
+        file = fs.get(ObjectId(file_id))
+        return file.read(), 200, {'Content-Type': 'application/pdf'}
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)

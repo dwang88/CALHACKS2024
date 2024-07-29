@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Class, Assignment } from './types';
 import './AssignmentSelection.css';
 import axios from 'axios';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
@@ -14,6 +16,7 @@ const AssignmentSelection = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ sender: string, message: string }>>([]);
   const [outputs, setOutputs] = useState<Array<{ image_name: string, solution_outputs: string[] }>>([]); // State for storing API response outputs
+  const [homeworkFiles, setHomeworkFiles] = useState<Array<{ _id: string, filename: string }>>([]);
 
   useEffect(() => {
     const classes: Class[] = [
@@ -37,7 +40,17 @@ const AssignmentSelection = () => {
 
     const selected = classes.find(cls => cls.id === parseInt(classId || '', 10)) || null;
     setSelectedClass(selected);
+    fetchHomeworkFiles();
   }, [classId]);
+
+  const fetchHomeworkFiles = async () => {
+    try {
+      const response = await axios.get(`http://127.0.0.1:5000/get_homework_files/${classId}/`);
+      setHomeworkFiles(response.data.homework_files);
+    } catch (error) {
+      console.error('Error fetching homework files:', error);
+    }
+  };
 
   const handleAssignmentSelect = (assignmentUrl: string) => {
     setPdfUrl(assignmentUrl);
@@ -50,7 +63,6 @@ const AssignmentSelection = () => {
         setPdfFile(file);
       });
   };
-
 
   const renderLatex = (text: string) => {
     // Split the text into LaTeX and non-LaTeX parts
@@ -68,7 +80,6 @@ const AssignmentSelection = () => {
       }
     });
   };
-
 
   const handleChatSubmit = async () => {
     if (!chatInput || !pdfFile) return;
@@ -110,6 +121,21 @@ const AssignmentSelection = () => {
           </ul>
         </>
       )}
+
+      <div className="homework-section">
+        <h2>Today's Homework</h2>
+        {homeworkFiles.length > 0 ? (
+          homeworkFiles.map(file => (
+            <div key={file._id} className="pdf-preview">
+              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                <Viewer fileUrl={`http://127.0.0.1:5000/get_file/${file._id}`} />
+              </Worker>
+            </div>
+          ))
+        ) : (
+          <p>No homework assigned</p>
+        )}
+      </div>
 
       <div className="viewer-chat-container">
         {pdfUrl && (
