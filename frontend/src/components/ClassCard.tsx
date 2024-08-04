@@ -1,5 +1,5 @@
 import React from "react";
-import { Class } from "../TeacherDashboard";
+import { Class } from "../types";
 import { useNavigate } from "react-router-dom";
 
 type ClassCardProps = {

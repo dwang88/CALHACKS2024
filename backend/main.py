@@ -25,6 +25,7 @@ fs = gridfs.GridFS(db)
 teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
+assignments_collection = db['Assignments']
 
 student_schema = {
     '_id': ObjectId,
@@ -32,7 +33,8 @@ student_schema = {
     'name': str,
     'classes': list,
     'report': list,
-    'questions': list
+    'questions': list,
+    'assignments': list
 }
 
 teacher_schema = {
@@ -50,7 +52,19 @@ class_schema = {
     'students': [],
     'class_report': str,
     'Teacher': str, # teacher_id,
-    'homework': list
+    'homework': list,
+    'assignments': list
+}
+
+assignment_schema = {
+    '_id': ObjectId,
+    'title': str,
+    'description': str,
+    'class_id': str,
+    'completed': bool,
+    'started': bool,
+    'score': float,
+    'url': str
 }
 
 @app.route('/add_student', methods=['POST'])
@@ -301,8 +315,8 @@ def get_questions(student_id):
     except Exception as e:
         return jsonify({"Error": str(e)})
 
-@app.route('/upload_homework/<class_id>/', methods=['POST'])
-def upload_homework(class_id):
+@app.route('/upload_homework/<assignment_id>/', methods=['POST'])
+def upload_homework(assignment_id):
     try:
         if 'file' not in request.files:
             return jsonify({'message': 'No file part in the request'}), 400
@@ -312,16 +326,23 @@ def upload_homework(class_id):
             return jsonify({'message': 'No file selected for uploading'}), 400
 
         filename = secure_filename(file.filename)
-        file_id = fs.put(file, filename=filename, metadata={"class_id": class_id})
+        file_id = fs.put(file, filename=filename, metadata={"assignment_id": assignment_id})
+        assignment_result = assignments_collection.update_one(
+            {"_id": ObjectId(assignment_id)},
+            {"$set": {"url": str(file_id)}}
+        )
 
-        return jsonify({'message': 'File successfully uploaded', 'file_id': str(file_id)}), 200
+        if assignment_result.modified_count > 0:
+            return jsonify({'message': 'File successfully uploaded', 'file_id': str(file_id)}), 200
+        else:
+            return jsonify({"error": "Failed to add report"}), 400
     except Exception as e:
         return jsonify({'message': f'Error occurred: {str(e)}'}), 500
     
-@app.route('/get_homework_files/<class_id>/', methods=['GET'])
-def get_homework_files(class_id):
+@app.route('/get_homework_files/<assignment_id>/', methods=['GET'])
+def get_homework_files(assignment_id):
     try:
-        files = fs.find({"metadata.class_id": class_id})
+        files = fs.find({"metadata.assignment_id": assignment_id})
         file_list = [{"_id": str(file._id), "filename": file.filename} for file in files]
         return jsonify({"homework_files": file_list}), 200
     except Exception as e:
@@ -334,6 +355,68 @@ def get_file(file_id):
         return file.read(), 200, {'Content-Type': 'application/pdf'}
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/create_assignment/', methods=['POST'])
+def create_assignment():
+    try:
+        assignment_data = request.get_json()
+        result = assignments_collection.insert_one(assignment_data)
+        class_id = assignment_data['class_id']
+        assignment_id = str(assignment_data['_id'])
+        students_list = classes_collection.find_one({'class_id': class_id})['students']
+        for student_id in students_list:
+            student_result = students_collection.update_one(
+                {'student_id': student_id},
+                {"$push": {'assignments': assignment_id}}
+            )
+        classes_result = classes_collection.update_one(
+            {'class_id': class_id},
+            {'$push': {'assignments': assignment_id}}
+        )
+        if student_result.modified_count > 0 and classes_result.modified_count > 0:
+            return jsonify({"message": "Assignment added successfully!", "assignment_id": str(result.inserted_id)}), 201
+        else:
+            return jsonify({"error": "Failed to add assignment."}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_assignments/<class_id>/', methods=['GET'])
+def get_assignments(class_id):
+    try:
+        assignments_list = []
+        class_data = classes_collection.find_one({'class_id': class_id})
+
+        if class_data is None:
+            return jsonify({'error': 'Class not found'}), 404
+        
+        assignment_ids = class_data['assignments']
+        for assignment_id in assignment_ids:
+            obj_id = ObjectId(assignment_id)
+            assignment = assignments_collection.find_one({'_id': obj_id})
+            if assignment:
+                assignment['_id'] = str(assignment['_id'])
+                assignments_list.append(assignment)
+            else:
+                # Handle the case where an assignment is not found
+                assignments_list.append({'_id': assignment_id, 'error': 'Assignment not found'})
+        return jsonify({"assignments": assignments_list}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
+@app.route('/get_assignment/<assignment_id>/', methods=['GET'])
+def get_assignment(assignment_id):
+    try:
+        assignment_id = ObjectId(assignment_id)
+        assignment = assignments_collection.find_one({'_id': assignment_id})
+
+        if assignment is None:
+            return jsonify({'error': 'Assignment not found'}), 404
+        
+        assignment['_id'] = str(assignment['_id'])
+
+        return jsonify({'Assignment': assignment})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
