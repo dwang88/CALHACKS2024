@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Class, Assignment } from './types';
 import './AssignmentSelection.css';
 import axios from 'axios';
-import { Worker, Viewer } from '@react-pdf-viewer/core';
-import '@react-pdf-viewer/core/lib/styles/index.css';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
@@ -16,41 +14,45 @@ const AssignmentSelection = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ sender: string, message: string }>>([]);
   const [outputs, setOutputs] = useState<Array<{ image_name: string, solution_outputs: string[] }>>([]); // State for storing API response outputs
-  const [homeworkFiles, setHomeworkFiles] = useState<Array<{ _id: string, filename: string }>>([]);
+  // const [homeworkFiles, setHomeworkFiles] = useState<Array<{ _id: string, filename: string }>>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const classes: Class[] = [
-      {
-        id: 1,
-        name: 'Math 101',
-        assignments: [
-          { id: 1, name: 'Homework 1', content: 'Solve integrals', pdfUrl: '/pdfs/ptest.pdf' },
-          { id: 2, name: 'Homework 2', content: 'Solve differentials', pdfUrl: '/pdfs/math101_hw2.pdf' }
-        ]
-      },
-      {
-        id: 2,
-        name: 'History 201',
-        assignments: [
-          { id: 1, name: 'Homework 1', content: 'Write an essay on WWII', pdfUrl: '/pdfs/history201_hw1.pdf' },
-          { id: 2, name: 'Homework 2', content: 'Explain the causes of the Great Depression', pdfUrl: '/pdfs/history201_hw2.pdf' }
-        ]
-      }
-    ];
 
-    const selected = classes.find(cls => cls.id === parseInt(classId || '', 10)) || null;
-    setSelectedClass(selected);
-    fetchHomeworkFiles();
+    // const selected = classes.find(cls => cls.id === parseInt(classId || '', 10)) || null;
+    // setSelectedClass(selected);
+    // fetchHomeworkFiles();
+    fetchAssignments();
   }, [classId]);
 
-  const fetchHomeworkFiles = async () => {
+  // const fetchHomeworkFiles = async () => {
+  //   try {
+  //     const response = await axios.get(`http://127.0.0.1:5000/get_homework_files/${classId}/`);
+  //     setHomeworkFiles(response.data.homework_files);
+  //   } catch (error) {
+  //     console.error('Error fetching homework files:', error);
+  //   }
+  // };
+
+  const fetchAssignments = async () => {
     try {
-      const response = await axios.get(`http://127.0.0.1:5000/get_homework_files/${classId}/`);
-      setHomeworkFiles(response.data.homework_files);
+      const response = await fetch(`http://localhost:5000/get_assignments/${classId}/`, {
+        method: "GET"
+      })
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json()
+      const dataAssignments = data.assignments;
+      setAssignments(dataAssignments);
+      console.log(assignments);
     } catch (error) {
-      console.error('Error fetching homework files:', error);
+      console.error(error);
     }
-  };
+  }
 
   const handleAssignmentSelect = (assignmentUrl: string) => {
     setPdfUrl(assignmentUrl);
@@ -63,6 +65,10 @@ const AssignmentSelection = () => {
         setPdfFile(file);
       });
   };
+
+  const handleAssignmentNavigate = (assignmentId: string) => {
+    navigate(`/assignment/${assignmentId}`);
+  }
 
   const renderLatex = (text: string) => {
     // Split the text into LaTeX and non-LaTeX parts
@@ -114,26 +120,24 @@ const AssignmentSelection = () => {
           <h2>Select an Assignment for {selectedClass.name}</h2>
           <ul className="assignment-list">
             {selectedClass.assignments.map((assign: Assignment) => (
-              <li key={assign.id} onClick={() => handleAssignmentSelect(assign.pdfUrl)}>
-                {assign.name}
+              <li key={assign._id} onClick={() => handleAssignmentSelect(assign.url)}>
+                {assign.title}
               </li>
             ))}
           </ul>
         </>
       )}
 
-      <div className="homework-section">
-        <h2>Today's Homework</h2>
-        {homeworkFiles.length > 0 ? (
-          homeworkFiles.map(file => (
-            <div key={file._id} className="pdf-preview">
-              <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                <Viewer fileUrl={`http://127.0.0.1:5000/get_file/${file._id}`} />
-              </Worker>
+      <div>
+        <h2>Assignments Due</h2>
+        {assignments.length > 0 ? (
+          assignments.map(assignment => (
+            <div style={{"border": "5px black", "cursor": "pointer"}} key={assignment._id} onClick={() => handleAssignmentNavigate(assignment._id)}>
+              <p>Assignment Title: {assignment.title}</p>
             </div>
           ))
         ) : (
-          <p>No homework assigned</p>
+          <p>No assignments</p>
         )}
       </div>
 

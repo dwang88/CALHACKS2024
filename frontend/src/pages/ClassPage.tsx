@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Class, Student } from "../TeacherDashboard";
+import { Class, Student } from "../types";
 import "./ClassPage.css";
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import CreateAssignmentForm from "../components/CreateAssignment";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -171,6 +172,10 @@ const ClassPage = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div>
+        <h2>Create Assignment</h2>
+        <CreateAssignmentForm classId={classId} />
       </div>
       {showPopup && selectedStudent && (
         <div className="popup-overlay">
