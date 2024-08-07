@@ -26,6 +26,7 @@ teachers_collection = db['Teachers']
 students_collection = db['Students']
 classes_collection = db['Classes']
 assignments_collection = db['Assignments']
+questions_collection = db['Questions']
 
 student_schema = {
     '_id': ObjectId,
@@ -65,6 +66,14 @@ assignment_schema = {
     'started': bool,
     'score': float,
     'url': str
+}
+
+questions_schema = {
+    '_id': ObjectId,
+    'question': str,
+    'options': list,
+    'type': str,
+    'correct_answer': str
 }
 
 @app.route('/add_student', methods=['POST'])
@@ -417,6 +426,33 @@ def get_assignment(assignment_id):
         return jsonify({'Assignment': assignment})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/create_assignment_question/', methods=['POST'])
+def add_assignment_question():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid input, no JSON received"}), 400
+        result = questions_collection.insert_one(data)
+        return jsonify({"message": "Question added successfully!", "question_id": str(result.inserted_id)}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_assignment_questions/<assignment_id>/', methods=['GET'])
+def get_assignment_questions(assignment_id):
+    try:
+        assignment_data = assignments_collection.find_one({"assignment_id": ObjectId(assignment_id)})
+        questions_list = assignment_data['questions']
+        if questions_list is None:
+            return jsonify({"error": "Assignment Id not found"}), 404
+        if len(questions_list > 0):
+            for question in questions_list:
+                question['_id'] = str(question['_id'])
+            return jsonify({"Questions": questions_list})
+        else:
+            return jsonify({"message": "No questions in this assignment"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
