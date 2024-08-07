@@ -1,0 +1,105 @@
+.assignment-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.assignment-title {
+    color: #202020;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.assignment-description, .assignment-score {
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.content-container {
+    height: calc(100vh - 200px);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.questions-homework-container {
+    display: flex;
+    height: 100%;
+    position: relative;
+}
+
+.questions-section, .homework-section {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.questions-content, .homework-content {
+    padding: 20px;
+    height: 90%;
+}
+
+.questions-section {
+    background-color: #f5f5f5;
+}
+
+
+.question {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mcq-options, .frq-response {
+    margin-top: 10px;
+}
+
+.mcq-option {
+    margin-bottom: 5px;
+}
+
+.frq-response input {
+    padding: 5px;
+    border: 2px solid #ddd;
+    border-radius: 7px;
+}
+
+.pdf-preview {
+    height: 100%;
+}
+
+.slider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background-color: #ddd;
+    cursor: col-resize;
+    z-index: 10;
+}
+
+.slider:hover {
+    background-color: #ccc;
+}
+
+.rpv-core__viewer {
+    height: 100% !important;
+}
+
+@media (max-width: 768px) {
+    .questions-homework-container {
+        flex-direction: column;
+    }
+
+    .questions-section, .homework-section {
+        width: 100% !important;
+        height: auto;
+    }
+
+    .slider {
+        display: none;
+    }
+}

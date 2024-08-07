@@ -1,0 +1,64 @@
+.create-question {
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.create-question h3 {
+    color: #202020;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.create-question select,
+.create-question input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-bottom: 1rem;
+}
+
+.create-question label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 1rem;
+}
+
+.create-question button {
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    margin-right: 0.5rem;
+}
+
+.create-question button:hover {
+    background-color: #555;
+}
+
+.options-list {
+    margin-top: 1rem;
+}
+
+.option-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.question-created {
+    color: #4CAF50;
+    font-weight: 600;
+    margin-top: 1rem;
+}

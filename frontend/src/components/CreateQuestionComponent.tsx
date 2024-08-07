@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Question } from "../types";
+import './CreateQuestionComponent.css';
 
 interface CreateQuestionProps {
     onAddQuestion: (question: Question) => void;
@@ -81,38 +82,42 @@ const CreateQuestion: React.FC<CreateQuestionProps> = ({ onAddQuestion }) => {
     }
 
     return (
-        <div>
-            <select value={questionType} onChange={handleSelectType}>
-                <option value="frq">frq</option>
-                <option value="mcq">mcq</option>
+        <div className="create-question">
+            <h3>Create New Question</h3>
+            <label htmlFor="questionType">Question Type:</label>
+            <select id="questionType" value={questionType} onChange={handleSelectType}>
+                <option value="frq">Free Response Question</option>
+                <option value="mcq">Multiple Choice Question</option>
             </select>
 
             <div>
                 <label htmlFor="question">Question Text:</label>
-                    <input
-                        type="text"
-                        id="question"
-                        value={question}
-                        onChange={handleQuestionChange}
-                    />
+                <input
+                    type="text"
+                    id="question"
+                    value={question}
+                    onChange={handleQuestionChange}
+                />
 
                 {questionType === "mcq" && (
                     <div>
-                        <label htmlFor="option">Option Text</label>
+                        <label htmlFor="option">Option Text:</label>
                         <input
                             type="text"
                             id="option"
                             value={currentOption}
                             onChange={handleOptionChange}
                         />
-                        <button type="button" onClick={onOptionCreate}>Add option</button>
-                        {options.length > 0 ? (
-                            options.map(option => (
-                                <p key={option}>{option}</p>
-                            ))  
-                        ) : (
-                            <p>No options added</p>
-                        )}
+                        <button type="button" onClick={onOptionCreate}>Add Option</button>
+                        <div className="options-list">
+                            {options.length > 0 ? (
+                                options.map(option => (
+                                    <div key={option} className="option-item">{option}</div>
+                                ))  
+                            ) : (
+                                <p>No options added</p>
+                            )}
+                        </div>
                     </div>
                 )}
                 
@@ -127,7 +132,7 @@ const CreateQuestion: React.FC<CreateQuestionProps> = ({ onAddQuestion }) => {
                 </div>
                 
                 <button type="button" onClick={createQuestion}>Create Question</button>
-                {questionCreated && <p>Question Added!</p>}
+                {questionCreated && <p className="question-created">Question Added!</p>}
             </div>
         </div>
     )

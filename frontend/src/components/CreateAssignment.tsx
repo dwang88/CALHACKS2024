@@ -5,6 +5,8 @@ import '@react-pdf-viewer/toolbar/lib/styles/index.css';
 import '../TeacherDashboard.css';
 import CreateQuestion from './CreateQuestionComponent';
 import { Question } from '../types';
+import './CreateAssignment.css';
+
 
 interface AssignmentFormProps {
     classId: string | undefined;
@@ -104,7 +106,7 @@ const handleAddQuestion = (newQuestion: Question) => {
 }
 
   return (
-    <div>
+    <div className="create-assignment-form">
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="assignmentTitle">Assignment Title:</label>
@@ -125,7 +127,9 @@ const handleAddQuestion = (newQuestion: Question) => {
           />
         </div>
         <div className="upload-homework-form">
+          <label htmlFor="fileUpload">Upload Homework:</label>
           <input
+            id="fileUpload"
             type="file"
             onChange={handleFileChange}
           />
@@ -133,11 +137,11 @@ const handleAddQuestion = (newQuestion: Question) => {
         <CreateQuestion onAddQuestion={handleAddQuestion}/>
         <button type="submit">Create Assignment</button>
         {pdfUrl && (
-            <div className="pdf-preview">
-                <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
-                    <Viewer fileUrl={pdfUrl} />
-                </Worker>
-            </div>
+          <div className="pdf-preview">
+            <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+              <Viewer fileUrl={pdfUrl} />
+            </Worker>
+          </div>
         )}
       </form>
     </div>
