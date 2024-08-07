@@ -25,5 +25,14 @@ export type Assignment = {
     completed: boolean,
     started: boolean,
     score: number,
-    url: string // file id
+    url: string, // file id
+    questions: Question[]
+}
+
+export type Question = {
+    _id: string,
+    question: string,
+    options: string[],
+    type: string, //freeform or mcq
+    correctAnswer: string
 }

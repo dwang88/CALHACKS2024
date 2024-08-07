@@ -49,6 +49,42 @@ const AssignmentPage = () => {
     return (
         <div>
             <h2>Assignment Page</h2>
+            <p>Assignment Title: {assignment?.title}</p>
+            <p>Assignment Description: {assignment?.description}</p>
+            <p>Assignment Score: {assignment?.score}</p>
+            <h3>Questions:</h3>
+            {assignment?.questions.map(question => (
+                <div key={question._id}>
+                    <p>{question.question}</p>
+                    {question.type === "mcq" && (
+                        <div>
+                            {question.options.map((option, index) => (
+                                <div key={index}>
+                                    <label>
+                                        <input 
+                                            type="radio"
+                                            name="mcqOption"
+                                            value={option}
+                                        />
+                                        {option}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {question.type === "frq" && (
+                        <div>
+                            <form>
+                                <label>Student Response:</label>
+                                <input
+                                    type="text"
+                                    id="response"
+                                />
+                            </form>
+                        </div>
+                    )}
+                </div>
+            ))}
             <div className="homework-section">
                 <h2>Today's Homework</h2>
                 {homeworkFiles.length > 0 ? (
@@ -63,9 +99,6 @@ const AssignmentPage = () => {
                 <p>No homework assigned</p>
                 )}
             </div>
-            <p>Assignment Title: {assignment?.title}</p>
-            <p>Assignment Description: {assignment?.description}</p>
-            <p>Assignment Score: {assignment?.score}</p>
         </div>
     );
 }

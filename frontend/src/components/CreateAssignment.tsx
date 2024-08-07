@@ -3,6 +3,8 @@ import { Viewer, Worker } from '@react-pdf-viewer/core';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/toolbar/lib/styles/index.css';
 import '../TeacherDashboard.css';
+import CreateQuestion from './CreateQuestionComponent';
+import { Question } from '../types';
 
 interface AssignmentFormProps {
     classId: string | undefined;
@@ -11,6 +13,8 @@ interface AssignmentFormProps {
 const CreateAssignmentForm: React.FC<AssignmentFormProps> = ({ classId }) => {
   const [assignmentTitle, setAssignmentTitle] = useState<string>('');
   const [assignmentDescription, setAssignmentDescription] = useState<string>('');
+  const [assignmentId, setAssignmentId] = useState<string>("");
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
@@ -31,7 +35,8 @@ const CreateAssignmentForm: React.FC<AssignmentFormProps> = ({ classId }) => {
         completed: false,
         started: false,
         score: 0,
-        url: ""
+        url: "",
+        questions: questions
     }
     try {
         const response = await fetch('http://localhost:5000/create_assignment/', {
@@ -48,6 +53,7 @@ const CreateAssignmentForm: React.FC<AssignmentFormProps> = ({ classId }) => {
 
         const data = await response.json()
         const assignment_id = data.assignment_id;
+        setAssignmentId(assignment_id);
         handleUploadHomework(assignment_id);
         console.log('Data', data);
     } catch (error) {
@@ -93,6 +99,10 @@ const handleUploadHomework = async (assignmentId: string) => {
     }
 };
 
+const handleAddQuestion = (newQuestion: Question) => {
+  setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+}
+
   return (
     <div>
       <form onSubmit={handleSubmit}>
@@ -115,14 +125,13 @@ const handleUploadHomework = async (assignmentId: string) => {
           />
         </div>
         <div className="upload-homework-form">
-            <input
-                type="file"
-                onChange={handleFileChange}
-            />
-            <button type="submit">
-                Create Assignment
-            </button>
+          <input
+            type="file"
+            onChange={handleFileChange}
+          />
         </div>
+        <CreateQuestion onAddQuestion={handleAddQuestion}/>
+        <button type="submit">Create Assignment</button>
         {pdfUrl && (
             <div className="pdf-preview">
                 <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
