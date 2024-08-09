@@ -453,6 +453,28 @@ def get_assignment_questions(assignment_id):
             return jsonify({"message": "No questions in this assignment"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/update_assignment_score/<assignment_id>/', methods=['PUT'])
+def update_assignment_score(assignment_id):
+    try:
+        score_data = request.get_json()
+        score = score_data.get('score')
+
+        # Ensure that assignment_id is an ObjectId
+        assignment_object_id = ObjectId(assignment_id)
+
+        result = assignments_collection.update_one(
+            {"_id": assignment_object_id},
+            {"$set": {"score": score}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"message": "Score updated successfully!"}), 200
+        else:
+            return jsonify({"error": "Failed to update score."}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
