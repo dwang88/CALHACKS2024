@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Assignment } from "../types";
+import { Assignment, Question } from "../types";
 import axios from "axios";
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import '@react-pdf-viewer/core/lib/styles/index.css';
@@ -11,12 +11,15 @@ const AssignmentPage = () => {
     const [assignment, setAssignment] = useState<Assignment>();
     const [homeworkFiles, setHomeworkFiles] = useState<Array<{ _id: string, filename: string }>>([]);
     const [sliderPosition, setSliderPosition] = useState(50);
+    const [userAnswers, setUserAnswers] = useState<{[key: string]: string}>({});
+    const [answerChecks, setAnswerChecks] = useState<{[key: string]: boolean}>({});
     const containerRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchAssignment();
     }, [assignmentId])
+
 
     const fetchAssignment = async () => {
 
@@ -81,6 +84,17 @@ const AssignmentPage = () => {
         };
     }, []);
 
+    const handleAnswerChange = (questionId: string, answer: string) => {
+        setUserAnswers(prev => ({...prev, [questionId]: answer}));
+    };
+
+    const checkAnswer = (question: Question) => {
+        const userAnswer = userAnswers[question._id];
+        const isCorrect = userAnswer === question.correctAnswer;
+        setAnswerChecks(prev => ({...prev, [question._id]: isCorrect}));
+    };
+    
+
     return (
         <div className="assignment-page">
             <h2 className="assignment-title">Assignment: {assignment?.title}</h2>
@@ -128,6 +142,7 @@ const AssignmentPage = () => {
                                                             type="radio"
                                                             name={`mcqOption-${question._id}`}
                                                             value={option}
+                                                            onChange={(e) => handleAnswerChange(question._id, e.target.value)}
                                                         />
                                                         {option}
                                                     </label>
@@ -137,9 +152,16 @@ const AssignmentPage = () => {
                                     )}
                                     {question.type === "frq" && (
                                         <div className="frq-response">
-                                            <label></label>
-                                            <input type="text" id={`response-${question._id}`} />
+                                            <input 
+                                                type="text" 
+                                                id={`response-${question._id}`} 
+                                                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                            />
                                         </div>
+                                    )}
+                                    <button onClick={() => checkAnswer(question)}>Check Answer</button>
+                                    {answerChecks[question._id] !== undefined && (
+                                        <p>{answerChecks[question._id] ? "Correct!" : "Incorrect. Try again."}</p>
                                     )}
                                 </div>
                             ))}

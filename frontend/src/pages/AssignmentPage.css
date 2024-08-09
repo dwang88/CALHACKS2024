@@ -79,6 +79,7 @@
     background-color: #ddd;
     cursor: col-resize;
     z-index: 10;
+    border-radius: 5px;
 }
 
 .slider:hover {
