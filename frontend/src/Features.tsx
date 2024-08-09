@@ -16,7 +16,7 @@ const Features: React.FC = () => {
             <p>Help teachers teach, by giving them detailed reports using AI.</p>
           </div>
           <div className="feature">
-            <h3>Analyze Quicker.</h3>
+            <h3>For Teachers.</h3>
             <p>Access detailed feedback on your classes based on student questions.</p>
           </div>
         </div>

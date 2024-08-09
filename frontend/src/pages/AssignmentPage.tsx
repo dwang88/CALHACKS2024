@@ -88,14 +88,19 @@ const AssignmentPage = () => {
 
     const handleAnswerChange = (questionId: string, answer: string) => {
         setUserAnswers(prev => ({...prev, [questionId]: answer}));
+        
+        const question = assignment?.questions.find(q => q._id === questionId);
+        if (question && question.type === "mcq") {
+            checkAnswer(question, answer);
+        }
     };
 
-    const checkAnswer = async (question: Question) => {
-        const userAnswer = userAnswers[question._id];
+    const checkAnswer = async (question: Question, answer?: string) => {
+        const userAnswer = answer || userAnswers[question._id];
         const isCorrect = userAnswer === question.correctAnswer;
         const newAnswerChecks = {...answerChecks, [question._id]: isCorrect};
         setAnswerChecks(newAnswerChecks);
-
+    
         const totalQuestions = assignment?.questions.length || 0;
         const correctAnswers = Object.values(newAnswerChecks).filter(Boolean).length;
         const newScore = (correctAnswers / totalQuestions) * 100;
@@ -132,7 +137,7 @@ const AssignmentPage = () => {
                             </div>
                         ))
                     ) : (
-                        <p>No homework assigned</p>
+                        <p>No homework upload</p>
                     )}
                 </div>
                 </div>
@@ -156,6 +161,7 @@ const AssignmentPage = () => {
                                                                 name={`mcqOption-${question._id}`}
                                                                 value={option}
                                                                 onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                                disabled={answerChecks[question._id] !== undefined}
                                                             />
                                                             {option}
                                                         </label>
@@ -169,6 +175,7 @@ const AssignmentPage = () => {
                                                     type="text" 
                                                     id={`response-${question._id}`} 
                                                     onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                    disabled={answerChecks[question._id] !== undefined}
                                                 />
                                                 <i 
                                                     className="check-answer-icon fa-solid fa-arrow-right" 
@@ -178,7 +185,9 @@ const AssignmentPage = () => {
                                             </div>
                                         )}
                                         {answerChecks[question._id] !== undefined && (
-                                            <p>{answerChecks[question._id] ? "Correct" : "Incorrect. Try again."}</p>
+                                            <p className={answerChecks[question._id] ? "correct-answer" : "incorrect-answer"}>
+                                                {answerChecks[question._id] ? "Correct" : "Incorrect"}
+                                            </p>
                                         )}
                                     </div>
                                 ))}

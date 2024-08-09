@@ -2,13 +2,14 @@
 .features {
     padding: 4rem 1rem;
     text-align: center;
-    
+    z-index: 1;
   }
   
   .features .container {
     max-width: 1400px;
     margin: 0 auto;
     margin-bottom: 50px;
+    z-index: 1;
   }
   
   .features h2 {
@@ -19,10 +20,10 @@
   .feature-list {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center; /* Center items horizontally */
-    gap: 4rem; /* Adjust as needed for spacing between items */
-    margin: 0 auto; /* Center the entire flex container */
-    max-width: 1200px; /* Example: Set a max-width to limit the width of the centered content */
+    justify-content: center; 
+    gap: 4rem; 
+    margin: 0 auto; 
+    max-width: 1200px; 
   }
   
   .feature {
@@ -32,6 +33,7 @@
     flex: 1;
     max-width: 300px;
     border-radius: 25px;
+    z-index: 1;
   }
   
   .feature h3 {
