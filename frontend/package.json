@@ -17,6 +17,7 @@
     "chart.js": "^4.4.3",
     "firebase": "^10.12.2",
     "katex": "^0.16.11",
+    "font-awesome": "^4.7.0",
     "node-fetch": "^3.3.2",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.3.1",
