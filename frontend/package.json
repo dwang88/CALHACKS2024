@@ -16,6 +16,7 @@
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
     "firebase": "^10.12.2",
+    "font-awesome": "^4.7.0",
     "katex": "^0.16.11",
     "node-fetch": "^3.3.2",
     "pdfjs-dist": "^3.11.174",
