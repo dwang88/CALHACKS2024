@@ -18,6 +18,7 @@
     "firebase": "^10.12.2",
     "font-awesome": "^4.7.0",
     "katex": "^0.16.11",
+    "font-awesome": "^4.7.0",
     "node-fetch": "^3.3.2",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.3.1",
