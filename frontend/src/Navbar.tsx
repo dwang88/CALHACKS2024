@@ -1,10 +1,14 @@
 // Navbar.js
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
+import { useAuth } from './contexts/authContext';
+import { doSignOut } from './firebase/firebaseConfig';
 
 const Navbar: React.FC = () => {
+  const { currentUser, signedIn, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleScroll = (e: React.MouseEvent, targetId: string) => {
     e.preventDefault();
@@ -16,6 +20,11 @@ const Navbar: React.FC = () => {
       });
     }
   };
+
+  const handleSignOut = () => {
+    doSignOut();
+    navigate("/");
+  }
 
   return (
     <nav className="navbar">
@@ -32,6 +41,14 @@ const Navbar: React.FC = () => {
             )}
           </li>
           <li><Link to="/login">Login</Link></li>
+          {signedIn && (
+            <li><button onClick={handleSignOut}>Log Out</button></li>
+          )}
+          {signedIn ? (
+            <li>{currentUser?.displayName}</li>
+          ) : (
+            <li>No User</li>
+          )}
         </ul>
       </div>
     </nav>

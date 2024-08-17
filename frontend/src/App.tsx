@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import Navbar from './Navbar';
 import Hero from './Hero';
@@ -13,13 +13,17 @@ import ProtectedRoute from './ProtectedRoute';
 import AssignmentSelection from './AssignmentSelection';
 import ClassPage from './pages/ClassPage';
 import AssignmentPage from './pages/AssignmentPage';
+import { useAuth } from './contexts/authContext';
 
 function App() {
   const [message, setMessage] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userType, setUserType] = useState<string | undefined | null>("");
+  const { currentUser, signedIn, loading } = useAuth();
 
-  const handleLogin = () => {
+  const handleLogin = (type: string | undefined | null) => {
     setIsAuthenticated(true);
+    setUserType(type);
   };
 
   return (
@@ -35,7 +39,12 @@ function App() {
               <Footer />
             </>
           } />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/login" element={signedIn ? (
+            <Navigate to={`/${userType}`} replace />
+          ) : (
+              <Login onLogin={handleLogin} />
+          )
+        } />
           <Route path="/student" element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <StudentDashboard />

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
-import { SignInWithGoogle } from './firebaseConfig';
+import { SignInWithGoogle } from './firebase/firebaseConfig';
+import { useAuth } from './contexts/authContext';
 
-const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+const Login: React.FC<{ onLogin: (type: string | undefined | null) => void }> = ({ onLogin }) => {
   const [userType, setUserType] = useState<string | null>(null);
   const [showButton, setShowButton] = useState(false);
   const navigate = useNavigate();
@@ -18,22 +19,6 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     try {
       const user = await SignInWithGoogle();
       if (user) {
-        const dummyClasses = [
-          {
-            id: 1,
-            name: 'Math 101',
-            assignments: [
-              { id: 1, name: 'Homework 1', content: 'Solve integrals', pdfUrl: 'path/to/math101_hw1.pdf' }
-            ]
-          },
-          {
-            id: 2,
-            name: 'History 201',
-            assignments: [
-              { id: 2, name: 'Homework 1', content: 'Write an essay on WWII', pdfUrl: 'path/to/history201_hw1.pdf' }
-            ]
-          }
-        ];
         await fetch("http://127.0.0.1:5000/add_student", {
           method: 'POST',
           headers: {
@@ -47,8 +32,8 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             questions: []
           })
         });
-        onLogin();
-        navigate('/student', { state: { classes: dummyClasses } });
+        onLogin(userType);
+        navigate('/student');
       }
     } catch (error) {
       console.error(error);
@@ -71,7 +56,7 @@ const Login: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
             classes: []
           })
         });
-        onLogin();
+        onLogin(userType);
         navigate('/teacher');
       }
     } catch (error) {
