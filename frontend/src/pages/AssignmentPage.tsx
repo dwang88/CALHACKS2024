@@ -19,6 +19,8 @@ const AssignmentPage = () => {
     const [score, setScore] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
+    const [horizontalSliderPosition, setHorizontalSliderPosition] = useState(70);
+    const horizontalSliderRef = useRef<HTMLDivElement>(null);
 
     const [chatInput, setChatInput] = useState('');
     const [chatHistory, setChatHistory] = useState<Array<{ sender: string, message: string }>>([]);
@@ -67,33 +69,57 @@ const AssignmentPage = () => {
     };
 
     useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (containerRef.current && sliderRef.current) {
+        const handleVerticalMouseMove = (e: MouseEvent) => {
+            if (containerRef.current) {
                 const containerRect = containerRef.current.getBoundingClientRect();
                 const newPosition = ((e.clientX - containerRect.left) / containerRect.width) * 100;
                 setSliderPosition(Math.min(Math.max(newPosition, 10), 90));
             }
         };
 
+        const handleHorizontalMouseMove = (e: MouseEvent) => {
+            if (containerRef.current) {
+                const containerRect = containerRef.current.getBoundingClientRect();
+                const newPosition = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+                setHorizontalSliderPosition(Math.min(Math.max(newPosition, 10), 90));
+            }
+        };
+    
         const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mousemove', handleVerticalMouseMove);
+            document.removeEventListener('mousemove', handleHorizontalMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-
-        const handleMouseDown = () => {
-            document.addEventListener('mousemove', handleMouseMove);
+    
+        const handleVerticalMouseDown = (e: MouseEvent) => {
+            e.preventDefault();
+            document.addEventListener('mousemove', handleVerticalMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
         };
 
+        const handleHorizontalMouseDown = (e: MouseEvent) => {
+            e.preventDefault();
+            document.addEventListener('mousemove', handleHorizontalMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        };
+    
         if (sliderRef.current) {
-            sliderRef.current.addEventListener('mousedown', handleMouseDown);
+            sliderRef.current.addEventListener('mousedown', handleVerticalMouseDown);
         }
 
+        if (horizontalSliderRef.current) {
+            horizontalSliderRef.current.addEventListener('mousedown', handleHorizontalMouseDown);
+        }
+    
         return () => {
             if (sliderRef.current) {
-                sliderRef.current.removeEventListener('mousedown', handleMouseDown);
+                sliderRef.current.removeEventListener('mousedown', handleVerticalMouseDown);
             }
-            document.removeEventListener('mousemove', handleMouseMove);
+            if (horizontalSliderRef.current) {
+                horizontalSliderRef.current.removeEventListener('mousedown', handleHorizontalMouseDown);
+            }
+            document.removeEventListener('mousemove', handleVerticalMouseMove);
+            document.removeEventListener('mousemove', handleHorizontalMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, []);
@@ -198,55 +224,61 @@ const AssignmentPage = () => {
                         style={{ width: `${100 - sliderPosition}%` }}
                     >
                         <div className="questions-content">
-                            <div className="questions-header">
-                                <h3 className="questions-title">Questions:</h3>
-                                <p className="assignment-score">Score: {score.toFixed(2)}%</p>
-                            </div>
-                            {assignment?.questions.map(question => (
-                                <div key={question._id} className="question">
-                                    <p>{question.question}</p>
-                                    {question.type === "mcq" && (
-                                        <div className="mcq-options">
-                                            {question.options.map((option, index) => (
-                                                <div key={index} className="mcq-option">
-                                                    <label>
-                                                        <input
-                                                            type="radio"
-                                                            name={`mcqOption-${question._id}`}
-                                                            value={option}
-                                                            onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                                                            disabled={answerChecks[question._id] !== undefined}
-                                                        />
-                                                        {option}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {question.type === "frq" && (
-                                        <div className="frq-response">
-                                            <input 
-                                                type="text" 
-                                                id={`response-${question._id}`} 
-                                                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                                                disabled={answerChecks[question._id] !== undefined}
-                                            />
-                                            <i 
-                                                className="check-answer-icon fa-solid fa-arrow-right" 
-                                                onClick={() => checkAnswer(question)}
-                                                title="Check Answer"
-                                            ></i>
-                                        </div>
-                                    )}
-                                    {answerChecks[question._id] !== undefined && (
-                                        <p className={answerChecks[question._id] ? "correct-answer" : "incorrect-answer"}>
-                                            {answerChecks[question._id] ? "Correct" : "Incorrect"}
-                                        </p>
-                                    )}
+                            <div className="questions-area" style={{ height: `${horizontalSliderPosition}%` }}>
+                                <div className="questions-header">
+                                    <h3 className="questions-title">Questions:</h3>
+                                    <p className="assignment-score">Score: {score.toFixed(2)}%</p>
                                 </div>
-                            ))}
-                            <div className="chatbot">
-                                <h3>Chatbot</h3>
+                                {assignment?.questions.map(question => (
+                                    <div key={question._id} className="question">
+                                        <p>{question.question}</p>
+                                        {question.type === "mcq" && (
+                                            <div className="mcq-options">
+                                                {question.options.map((option, index) => (
+                                                    <div key={index} className="mcq-option">
+                                                        <label>
+                                                            <input
+                                                                type="radio"
+                                                                name={`mcqOption-${question._id}`}
+                                                                value={option}
+                                                                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                                disabled={answerChecks[question._id] !== undefined}
+                                                            />
+                                                            {option}
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {question.type === "frq" && (
+                                            <div className="frq-response">
+                                                <input 
+                                                    type="text" 
+                                                    id={`response-${question._id}`} 
+                                                    onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                    disabled={answerChecks[question._id] !== undefined}
+                                                />
+                                                <i 
+                                                    className="check-answer-icon fa-solid fa-arrow-right" 
+                                                    onClick={() => checkAnswer(question)}
+                                                    title="Check Answer"
+                                                ></i>
+                                            </div>
+                                        )}
+                                        {answerChecks[question._id] !== undefined && (
+                                            <p className={answerChecks[question._id] ? "correct-answer" : "incorrect-answer"}>
+                                                {answerChecks[question._id] ? "Correct" : "Incorrect"}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <div 
+                                className="horizontal-slider" 
+                                ref={horizontalSliderRef}
+                                style={{ top: `${horizontalSliderPosition}%` }}
+                            ></div>
+                            <div className="chatbot" style={{ height: `${100 - horizontalSliderPosition}%` }}>
                                 <div className="chat-history">
                                     {chatHistory.map((chat, index) => (
                                         <div key={index} className={`chat-message ${chat.sender}`}>
@@ -265,7 +297,6 @@ const AssignmentPage = () => {
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>

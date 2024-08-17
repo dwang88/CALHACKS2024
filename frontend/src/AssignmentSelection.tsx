@@ -127,65 +127,22 @@ const AssignmentSelection = () => {
           </ul>
         </>
       )}
-
-      <div>
-        <h2>Assignments Due</h2>
+      <div className="assignment-list">
+        <h2>View Assignments</h2>
         {assignments.length > 0 ? (
           assignments.map(assignment => (
-            <div style={{"border": "5px black", "cursor": "pointer"}} key={assignment._id} onClick={() => handleAssignmentNavigate(assignment._id)}>
-              <p>Assignment Title: {assignment.title}</p>
+            <div 
+              className="assignment-row" 
+              key={assignment._id} 
+              onClick={() => handleAssignmentNavigate(assignment._id)}
+            >
+              <div className="assignment-title">{assignment.title}</div>
+              <div className="assignment-due">Score: {assignment.score}</div>
             </div>
           ))
         ) : (
           <p>No assignments</p>
         )}
-      </div>
-
-      <div className="viewer-chat-container">
-        {pdfUrl && (
-          <div className="pdf-viewer">
-            <iframe
-              src={pdfUrl}
-              width="80%"
-              height="400px"
-              title="PDF Viewer"
-            />
-          </div>
-        )}
-
-        <div className="chatbot">
-          <h2>Chatbot</h2>
-          <div className="chat-history">
-            {chatHistory.map((chat, index) => (
-              <div key={index} className={`chat-message ${chat.sender}`}>
-                {renderLatex(chat.message)}
-              </div>
-            ))}
-          </div>
-          <div className="chat-input">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask a question..."
-            />
-            <button onClick={handleChatSubmit}>Send</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="solution-output">
-        <h2>Solution Output</h2>
-        <div>
-          {outputs.map((output, index) => (
-            <div key={index}>
-              <h3>Response for {output.image_name}:</h3>
-              {output.solution_outputs.map((text, idx) => (
-                <div key={idx}>{renderLatex(text)}</div>
-              ))}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
