@@ -5,6 +5,7 @@ import "./ClassPage.css";
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import CreateAssignmentForm from "../components/CreateAssignment";
+import { getAuth } from "firebase/auth";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -19,6 +20,11 @@ const ClassPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAllReports, setShowAllReports] = useState(false);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
+  const [showCreateAssignment, setShowCreateAssignment] = useState(false);
+  const [studentIdToAdd, setStudentIdToAdd] = useState('');
+  const auth = getAuth();
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [showAddStudentPopup, setShowAddStudentPopup] = useState(false);
 
   useEffect(() => {
     const fetchStudent = async (studentId: string): Promise<Student | undefined> => {
@@ -74,6 +80,62 @@ const ClassPage = () => {
       setFilteredStudents(filtered);
     }
   }, [students, searchTerm]);
+
+  const fetchClasses = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+        console.error("No user logged in");
+        return;
+    }
+    const endpoint = `http://127.0.0.1:5000/get_classes_of_teacher/${uid}/`;
+    try {
+        const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        const data = await response.json();
+        setClasses(data.Classes);
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+};
+
+const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  if (!studentIdToAdd) {
+    alert('Please enter a student ID');
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://127.0.0.1:5000/enroll_student/${classId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ student_id: studentIdToAdd }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add student');
+    }
+
+    const result = await response.json();
+    alert(result.message);
+    setStudentIdToAdd('');
+    setShowAddStudentPopup(false);
+    // Refresh the class list
+    fetchClasses();
+  } catch (error) {
+    console.error('Error adding student:', error);
+    alert('Failed to add student. Please try again.');
+  }
+};
 
   const generateStudentReport = async (studentId: string) => {
     try {
@@ -131,6 +193,7 @@ const ClassPage = () => {
     ],
   };
 
+
   const chartOptions = {
     scales: {
       y: {
@@ -163,19 +226,22 @@ const ClassPage = () => {
           onChange={handleSearch}
         />
       </div>
-      <div className="students-list">
-        {filteredStudents?.map((student) => (
-          <div key={student.student_id} className="student-row" onClick={() => handleStudentClick(student)}>
-            <div className="student-name">{student.name}</div>
-            <div className="student-info">
-              <div>Student ID: {student.student_id}</div>
+      <div className="content-wrapper">
+        <div className="menu">
+          <h2 className="teacher-actions">Teacher Actions</h2>
+          <button onClick={() => setShowCreateAssignment(true)}>Create Assignment</button>
+          <button onClick={() => setShowAddStudentPopup(true)}>Add Student</button>
+        </div>
+        <div className="students-list">
+          {filteredStudents?.map((student) => (
+            <div key={student.student_id} className="student-row" onClick={() => handleStudentClick(student)}>
+              <div className="student-name">{student.name}</div>
+              <div className="student-info">
+                <div>Student ID: {student.student_id}</div>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-      <div>
-        <h2>Create Assignment</h2>
-        <CreateAssignmentForm classId={classId} />
+          ))}
+        </div>
       </div>
       {showPopup && selectedStudent && (
         <div className="popup-overlay">
@@ -205,7 +271,7 @@ const ClassPage = () => {
               </div>
             </div>
             <div className="full-width-sections">
-            <div className="classCard full-width">
+              <div className="classCard full-width">
                 <h3>Past Questions</h3>
                 {selectedStudent.questions && selectedStudent.questions.length > 0 ? (
                   <div className="content-container">
@@ -256,6 +322,34 @@ const ClassPage = () => {
           </div>
         </div>
       )}
+      {showCreateAssignment && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h2>Create Assignment</h2>
+            <CreateAssignmentForm classId={classId} />
+            <button onClick={() => setShowCreateAssignment(false)} className="close-popup">Close</button>
+          </div>
+        </div>
+      )}
+        {showAddStudentPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h2>Add Student</h2>
+            <form onSubmit={handleAddStudent}>
+              <input
+                type="text"
+                value={studentIdToAdd}
+                onChange={(e) => setStudentIdToAdd(e.target.value)}
+                placeholder="Enter Student ID"
+                required
+              />
+              <button type="submit">Add</button>
+            </form>
+            <button onClick={() => setShowAddStudentPopup(false)} className="close-popup">Close</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

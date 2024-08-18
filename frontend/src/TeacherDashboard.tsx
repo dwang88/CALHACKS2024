@@ -9,7 +9,6 @@ import { Class } from './types';
 const TeacherDashboard: React.FC = () => {
     const auth = getAuth();
     const [classes, setClasses] = useState<Class[]>([]);
-    const [studentIdToAdd, setStudentIdToAdd] = useState('');
     
 
     const fetchClasses = async () => {
@@ -39,39 +38,7 @@ const TeacherDashboard: React.FC = () => {
     useEffect(() => {
         fetchClasses();
     }, []);
-
-    const handleAddStudent = async (classId: string) => {
-        if (!studentIdToAdd) {
-            alert('Please enter a student ID');
-            return;
-        }
-
-        try {
-            const response = await fetch(`http://127.0.0.1:5000/enroll_student/${classId}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ student_id: studentIdToAdd }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to add student');
-            }
-
-            const result = await response.json();
-            alert(result.message);
-            setStudentIdToAdd('');
-            // Refresh the class list
-            fetchClasses();
-        } catch (error) {
-            console.error('Error adding student:', error);
-            alert('Failed to add student. Please try again.');
-        }
-    };
-
     
-
     return (
         <div>
             <h1 className='teacher'>Teacher Dashboard</h1>
@@ -85,18 +52,6 @@ const TeacherDashboard: React.FC = () => {
                         {classes.map((specClass) => (
                             <div key={specClass.class_id} className="card">
                                 <ClassCard specClass={specClass} />
-                                <div className="add-student-form">
-                                    <input
-                                        type="text"
-                                        value={studentIdToAdd}
-                                        onChange={(e) => setStudentIdToAdd(e.target.value)}
-                                        placeholder="Enter Student ID"
-                                    />
-                                    <button onClick={() => handleAddStudent(specClass.class_id)}>
-                                        Add Student
-                                    </button>
-                                </div>
-                                
                             </div>
                         ))}
                     </div>
