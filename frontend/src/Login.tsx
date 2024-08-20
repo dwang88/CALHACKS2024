@@ -5,6 +5,7 @@ import { SignInWithGoogle } from './firebase/firebaseConfig';
 import { useAuth } from './contexts/authContext';
 
 const Login: React.FC<{ onLogin: (type: string | undefined | null) => void }> = ({ onLogin }) => {
+  const { updateUserType } = useAuth();
   const [userType, setUserType] = useState<string | null>(null);
   const [showButton, setShowButton] = useState(false);
   const navigate = useNavigate();
@@ -32,7 +33,8 @@ const Login: React.FC<{ onLogin: (type: string | undefined | null) => void }> = 
             questions: []
           })
         });
-        onLogin(userType);
+        updateUserType("student");
+        onLogin("student");
         navigate('/student');
       }
     } catch (error) {
@@ -56,7 +58,8 @@ const Login: React.FC<{ onLogin: (type: string | undefined | null) => void }> = 
             classes: []
           })
         });
-        onLogin(userType);
+        updateUserType("teacher");
+        onLogin("teacher");
         navigate('/teacher');
       }
     } catch (error) {

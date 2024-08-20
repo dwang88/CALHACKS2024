@@ -17,13 +17,10 @@ import { useAuth } from './contexts/authContext';
 
 function App() {
   const [message, setMessage] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userType, setUserType] = useState<string | undefined | null>("");
-  const { currentUser, signedIn, loading } = useAuth();
+  const { currentUser, signedIn, loading, userType } = useAuth();
 
   const handleLogin = (type: string | undefined | null) => {
-    setIsAuthenticated(true);
-    setUserType(type);
+    console.log(type);
   };
 
   return (
@@ -45,31 +42,39 @@ function App() {
               <Login onLogin={handleLogin} />
           )
         } />
-          <Route path="/student" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/teacher" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <TeacherDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/assignments/:classId" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <AssignmentSelection />
-            </ProtectedRoute>
-          } />
-          <Route path="/classes/:classId" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ClassPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/assignment/:assignmentId" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <AssignmentPage />
-            </ProtectedRoute>
-          } />
+          {userType === "student" && 
+            <>
+              <Route path="/student" element={
+                <ProtectedRoute isAuthenticated={signedIn}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/student/assignments/:classId" element={
+                <ProtectedRoute isAuthenticated={signedIn}>
+                  <AssignmentSelection />
+                </ProtectedRoute>
+              } />
+              <Route path="/student/assignment/:assignmentId" element={
+                <ProtectedRoute isAuthenticated={signedIn}>
+                  <AssignmentPage />
+                </ProtectedRoute>
+              } />
+            </>
+          }
+        {userType === "teacher" && 
+          <>
+            <Route path="/teacher" element={
+              <ProtectedRoute isAuthenticated={signedIn}>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/classes/:classId" element={
+              <ProtectedRoute isAuthenticated={signedIn}>
+                <ClassPage />
+              </ProtectedRoute>
+            } />
+          </>
+        }
         </Routes>
       </div>
     </Router>

@@ -70,7 +70,7 @@ const StudentDashboard = () => {
   };
 
   const handleClassSelect = (classId: string) => {
-    navigate(`/assignments/${classId}`);
+    navigate(`/student/assignments/${classId}`);
   };
 
   const handleAddClass = async () => {

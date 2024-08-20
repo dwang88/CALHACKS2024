@@ -67,7 +67,7 @@ const AssignmentSelection = () => {
   };
 
   const handleAssignmentNavigate = (assignmentId: string) => {
-    navigate(`/assignment/${assignmentId}`);
+    navigate(`/student/assignment/${assignmentId}`);
   }
 
   const renderLatex = (text: string) => {
