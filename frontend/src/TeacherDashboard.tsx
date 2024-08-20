@@ -5,14 +5,15 @@ import ClassCard from './components/ClassCard';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/toolbar/lib/styles/index.css';
 import { Class } from './types';
+import { useAuth } from './contexts/authContext';
 
 const TeacherDashboard: React.FC = () => {
     const auth = getAuth();
+    const { userType, currentUser } = useAuth();
     const [classes, setClasses] = useState<Class[]>([]);
     
-
     const fetchClasses = async () => {
-        const uid = auth.currentUser?.uid;
+        const uid = currentUser?.uid;
         if (!uid) {
             console.error("No user logged in");
             return;
@@ -36,6 +37,7 @@ const TeacherDashboard: React.FC = () => {
     };
 
     useEffect(() => {
+        console.log(userType);
         fetchClasses();
     }, []);
     

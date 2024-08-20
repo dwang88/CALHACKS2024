@@ -11,7 +11,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ specClass }) => {
     const navigate = useNavigate();
 
     const handleClick = () => {
-        navigate(`/classes/${specClass.class_id}/`)
+        navigate(`/teacher/classes/${specClass.class_id}/`)
     }
     
     return (
