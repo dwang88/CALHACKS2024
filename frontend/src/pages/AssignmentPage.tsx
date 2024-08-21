@@ -26,6 +26,7 @@ const AssignmentPage = () => {
     const [chatHistory, setChatHistory] = useState<Array<{ sender: string, message: string }>>([]);
     const [pdfFile, setPdfFile] = useState<File | null>(null);
     const [processingResults, setProcessingResults] = useState<Array<{ image_name: string, solution_outputs: string[] }>>([]);
+    const [loading, setLoading] = useState(false); // Loading state for the chatbot
 
     useEffect(() => {
         fetchAssignment();
@@ -33,7 +34,7 @@ const AssignmentPage = () => {
 
     const fetchAssignment = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/get_assignment/${assignmentId}/`, {
+            const response = await fetch(`http://127.0.0.1:5000/get_assignment/${assignmentId}/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -146,7 +147,7 @@ const AssignmentPage = () => {
         setScore(newScore);
         
         try {
-            await axios.put(`http://localhost:5000/update_assignment_score/${assignmentId}/`, {
+            await axios.put(`http://127.0.0.1:5000/update_assignment_score/${assignmentId}/`, {
                 score: newScore
             });
         } catch (error) {
@@ -172,12 +173,13 @@ const AssignmentPage = () => {
 
         const newChatHistory = [...chatHistory, { sender: 'student', message: chatInput }];
         setChatHistory(newChatHistory);
+        setLoading(true); // Set loading to true when submitting
 
         const formData = new FormData();
         formData.append('pdf', pdfFile);
 
         try {
-            const response = await axios.post('http://localhost:8000/process', formData);
+            const response = await axios.post('http://127.0.0.1:8000/process', formData);
             console.log('Full API response:', response);
             const results = response.data;
             setProcessingResults(results);
@@ -190,6 +192,8 @@ const AssignmentPage = () => {
 
         } catch (error) {
             console.error('Error processing question:', error);
+        } finally {
+            setLoading(false); // Set loading to false after response is received
         }
 
         setChatInput('');
@@ -285,6 +289,12 @@ const AssignmentPage = () => {
                                             {renderLatex(chat.message)}
                                         </div>
                                     ))}
+                                    {/* Show loading spinner when waiting for a response */}
+                                    {loading && (
+                                        <div className="loading-spinner">
+                                            <i className="fa fa-spinner fa-spin"></i> Loading...
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="chat-input">
                                     <input
@@ -292,8 +302,11 @@ const AssignmentPage = () => {
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
                                         placeholder="Ask a question..."
+                                        disabled={loading}  // Disable input while loading
                                     />
-                                    <button onClick={handleChatSubmit}>Send</button>
+                                    <button onClick={handleChatSubmit} disabled={loading}>
+                                        {loading ? "Sending..." : "Send"}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -302,6 +315,6 @@ const AssignmentPage = () => {
             </div>
         </div>
     );
-}
+};
 
 export default AssignmentPage;
