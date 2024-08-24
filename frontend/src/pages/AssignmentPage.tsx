@@ -169,15 +169,20 @@ const AssignmentPage = () => {
 
     const handleChatSubmit = async () => {
         if (!chatInput || !pdfFile) return;
-
+    
         const newChatHistory = [...chatHistory, { sender: 'student', message: chatInput }];
         setChatHistory(newChatHistory);
-
+    
         const formData = new FormData();
         formData.append('pdf', pdfFile);
-
+        formData.append('student_question', chatInput);
+    
         try {
-            const response = await axios.post('http://localhost:8000/process', formData);
+            const response = await axios.post('http://localhost:8000/process', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             console.log('Full API response:', response);
             const results = response.data;
             setProcessingResults(results);
@@ -187,11 +192,11 @@ const AssignmentPage = () => {
                 `For ${result.image_name}:\n${result.solution_outputs.join('\n')}`
             ).join('\n\n');
             setChatHistory(prev => [...prev, { sender: 'bot', message: botMessage }]);
-
+    
         } catch (error) {
             console.error('Error processing question:', error);
         }
-
+    
         setChatInput('');
     };
 
