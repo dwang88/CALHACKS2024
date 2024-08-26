@@ -15,7 +15,7 @@ const ClassPage = () => {
   const [students, setStudents] = useState<Student[] | null>(null);
   const [filteredStudents, setFilteredStudents] = useState<Student[] | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [report, setReport] = useState<string | undefined>("");
+  const [report, setReport] = useState<string | undefined | null>(undefined);
   const [showPopup, setShowPopup] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAllReports, setShowAllReports] = useState(false);
@@ -138,6 +138,7 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
 };
 
   const generateStudentReport = async (studentId: string) => {
+    setReport(null);
     try {
       const response = await fetch(`http://127.0.0.1:5000/generate_student_report/${studentId}/`, {
         method: "PATCH",
@@ -152,6 +153,7 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
       setReport(data.Report);
     } catch (error) {
       console.error(error);
+      setReport("Failed to generate report");
     }
   };
 
@@ -317,7 +319,13 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
             <button onClick={() => generateStudentReport(selectedStudent.student_id)} className="generate-report-button">
               Generate Report
             </button>
-            {report && <p className="report">Report: {report}</p>}
+            {report === null ? (
+              <p className="report">Generating Report...</p>
+            ) : report === undefined ? (
+              <p className="report">No Report Yet</p>
+            ) : (
+              <p className="report">Report: {report}</p>
+            )}
             <button onClick={closePopup} className="close-popup">Close</button>
           </div>
         </div>

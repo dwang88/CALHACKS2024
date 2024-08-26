@@ -77,6 +77,14 @@ questions_schema = {
     'correct_answer': str
 }
 
+response_schema = {
+    '_id': ObjectId,
+    'assignment_id': str,
+    'student_id': str,
+    'answers': list,
+    'score': float
+}
+
 @app.route('/add_student', methods=['POST'])
 def add_student():
     try:
@@ -269,6 +277,20 @@ def get_classes_of_teacher(teacher_id):
         
     except Exception as e:
         return jsonify({"Error": str(e)})
+    
+@app.route('/get_assignments_of_student/<student_id>/', methods=['GET'])
+def get_assignments_of_student(student_id):
+    student = students_collection.find_one({"student_id": student_id})
+    if not student:
+        return jsonify({"Error": "Could not find student"}), 404
+    assignment_ids = student['assignments']
+    assignments = []
+    for id in assignment_ids:
+        assignment_response = get_assignment(id)
+        assignment = assignment_response['Assignment']
+        assignments.append(assignment)
+
+    return jsonify({"Assignments": assignments}), 200
 
 @app.route('/generate_student_report/<student_id>/', methods=['PATCH'])
 def generate_student_report(student_id):
@@ -502,10 +524,10 @@ def update_assignment_score(assignment_id):
         score = score_data.get('score')
 
         # Ensure that assignment_id is an ObjectId
-        assignment_object_id = ObjectId(assignment_id)
+        # assignment_object_id = ObjectId(assignment_id)
 
-        result = assignments_collection.update_one(
-            {"_id": assignment_object_id},
+        result = responses_collection.update_one(
+            {"assignment_id": assignment_id},
             {"$set": {"score": score}}
         )
 
@@ -516,6 +538,48 @@ def update_assignment_score(assignment_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/add_student_response/', methods=['POST'])
+def add_student_response():
+    try:
+        data = request.get_json()
+        assignment_id = ObjectId(data['assignment_id'])
+        if not data:
+            return jsonify({"Message": "Error POSTing data"}), 400
+        
+        result = responses_collection.insert_one(data)
 
+        assignment_result = responses_collection.update_one(
+            {"assignment_id": assignment_id},
+            {"$set": {"completed": "true"}}
+        )
+
+        if assignment_result.modified_count <= 0:
+            return jsonify({"Error": "Did not properly set assignment completion status"}), 400
+        else:
+            return jsonify({"Message": "Question added successfully!",
+                        "Response Id": str(result.inserted_id)})
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 500
+    
+@app.route('/update_student_answers/<assignment_id>', methods=['PUT'])
+def update_student_answers(assignment_id):
+    try:
+        data = request.get_json()
+        answers = data['answers']
+        if(len(answers) < 1):
+            return jsonify({"Message": "No answers to update"}), 400
+
+        result = responses_collection.update_one(
+            {"assignment_id": assignment_id},
+            {"$set": {"answers": answers}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"Message": "Successfully updated student response"}), 200
+        else:
+            return jsonify({"Error": "Failed to update answers"}), 400
+    except Exception as e:
+        return jsonify({"Error": str(e)})
+    
 if __name__ == '__main__':
     app.run(debug=True)
