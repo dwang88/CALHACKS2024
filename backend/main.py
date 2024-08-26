@@ -27,6 +27,7 @@ students_collection = db['Students']
 classes_collection = db['Classes']
 assignments_collection = db['Assignments']
 questions_collection = db['Questions']
+responses_collection = db['Responses']
 
 student_schema = {
     '_id': ObjectId,
@@ -272,28 +273,68 @@ def get_classes_of_teacher(teacher_id):
 @app.route('/generate_student_report/<student_id>/', methods=['PATCH'])
 def generate_student_report(student_id):
     try:
-        questions_list = students_collection.find_one({'student_id': student_id})['questions']
-        
-        if len(questions_list) == 0:
-            return jsonify({"Report": "No questions were asked by the student"})
-        
-        questions = ""
-        for question in questions_list:
-            questions += question + " "
-        
+        # questions_list = students_collection.find_one({'student_id': student_id})['questions']
         api_key = os.getenv('OPENAI_API_KEY')
 
         client = OpenAI(
             api_key=api_key
         )
 
+        assignment_list = students_collection.find_one({'student_id': student_id})['assignments']
+        response_objs = []
+
+        if(len(assignment_list) < 1):
+            return jsonify({"Response": "Student has no assignments"})
+        
+        for assignment_id in assignment_list:
+            student_response = responses_collection.find_one({'student_id': student_id,
+                                                             'assignment_id': assignment_id})
+            if student_response is None:
+                continue
+            
+            for key, value in student_response['checks'].items():
+                question_response = questions_collection.find_one({'_id': ObjectId(key)})
+                question = question_response['question']
+                correct_ans = question_response['correctAnswer']
+                answer = student_response['answers'][key]
+                if value == False:
+                    obj = {
+                        'question': question,
+                        'correct_ans': correct_ans,
+                        'student_ans': answer,
+                        'score': student_response['score']
+                    }
+                    response_objs.append(obj)
+        # store student responses in student collection
+        
+        # if len(questions_list) == 0:
+        #     return jsonify({"Report": "No questions were asked by the student"})
+        
+        # questions = ""
+        # for question in questions_list:
+        #     questions += question + " "
+                    
+        SYS_PROMPT = """You are an educational assistant that helps teachers understand what their students are struggling in.
+        The user will provide a list of student response objects, where a student response object follows this format:
+        {
+            'question': <question>, (this is the assignment question)
+            'correct_ans': <correct answer>,
+            'student_ans': <student answer>,
+            'score': <assignment_score>
+        }. 
+        These are all the questions that the student got wrong. Given these student response objects,
+        generate a concise 3-4 sentence report of the student's progress based on their score as well as the
+        content of the answers they got wrong. For example, if they got a question about addition wrong,
+        consider why or how they may have got it wrong. The goal is to provide the teacher with a report about the student's overall progress. 
+        The user will provide the list of response objects.
+        Report:"""
+
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", 
-                 "content": "You are an educational assistant that helps teachers understand what their students are struggling in"},
-                {"role": "user", 
-                 "content": "Generate a concise 3-4 sentence report about a student's progress based on the following questions they've asked: " + questions}
+                 "content": SYS_PROMPT},
+                {"role": "user", "content": f"Student responses: {response_objs}"}
             ]
         )
 
