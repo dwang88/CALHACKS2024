@@ -548,15 +548,15 @@ def add_student_response():
         
         result = responses_collection.insert_one(data)
 
-        assignment_result = responses_collection.update_one(
-            {"assignment_id": assignment_id},
-            {"$set": {"completed": "true"}}
-        )
+        # assignment_result = responses_collection.update_one(
+        #     {"assignment_id": assignment_id},
+        #     {"$set": {"completed": "true"}}
+        # )
 
-        if assignment_result.modified_count <= 0:
-            return jsonify({"Error": "Did not properly set assignment completion status"}), 400
-        else:
-            return jsonify({"Message": "Question added successfully!",
+        # if assignment_result.modified_count <= 0:
+        #     return jsonify({"Error": "Did not properly set assignment completion status"}), 400
+        # else:
+        return jsonify({"Message": "Question added successfully!",
                         "Response Id": str(result.inserted_id)})
     except Exception as e:
         return jsonify({"Error": str(e)}), 500
