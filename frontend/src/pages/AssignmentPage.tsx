@@ -8,6 +8,7 @@ import './AssignmentPage.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
+import LoadingDots from '../components/LoadingDots'; // Import the LoadingDots component
 
 const AssignmentPage = () => {
     const { assignmentId } = useParams<{ assignmentId: string }>();
@@ -16,6 +17,7 @@ const AssignmentPage = () => {
     const [sliderPosition, setSliderPosition] = useState(50);
     const [userAnswers, setUserAnswers] = useState<{[key: string]: string}>({});
     const [answerChecks, setAnswerChecks] = useState<{[key: string]: boolean}>({});
+    const [isLoading, setIsLoading] = useState(false);
     const [score, setScore] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
@@ -176,6 +178,8 @@ const AssignmentPage = () => {
         const formData = new FormData();
         formData.append('pdf', pdfFile);
         formData.append('student_question', chatInput);
+
+        setIsLoading(true); // Set loading to true before API call
     
         try {
             const response = await axios.post('http://localhost:8000/process', formData, {
@@ -195,6 +199,9 @@ const AssignmentPage = () => {
     
         } catch (error) {
             console.error('Error processing question:', error);
+            setChatHistory(prev => [...prev, { sender: 'bot', message: 'An error occurred while processing your question.' }]);
+        } finally {
+            setIsLoading(false); 
         }
     
         setChatInput('');
@@ -290,6 +297,11 @@ const AssignmentPage = () => {
                                             {renderLatex(chat.message)}
                                         </div>
                                     ))}
+                                    {isLoading && (
+                                        <div className="chat-message bot">
+                                            <LoadingDots />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="chat-input">
                                     <input
@@ -297,8 +309,11 @@ const AssignmentPage = () => {
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
                                         placeholder="Ask a question..."
+                                        disabled={isLoading}
                                     />
-                                    <button onClick={handleChatSubmit}>Send</button>
+                                    <button onClick={handleChatSubmit} disabled={isLoading}>
+                                        {isLoading ? 'Sending...' : 'Send'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
