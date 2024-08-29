@@ -49,12 +49,12 @@ function App() {
                   <StudentDashboard />
                 </ProtectedRoute>
               } />
-              <Route path="/student/assignments/:classId" element={
+              <Route path="/student/:studentId/assignments/:classId" element={
                 <ProtectedRoute isAuthenticated={signedIn}>
                   <AssignmentSelection />
                 </ProtectedRoute>
               } />
-              <Route path="/student/assignment/:assignmentId" element={
+              <Route path="/student/:studentId/assignment/:assignmentId" element={
                 <ProtectedRoute isAuthenticated={signedIn}>
                   <AssignmentPage />
                 </ProtectedRoute>

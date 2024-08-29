@@ -6,6 +6,7 @@ import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import CreateAssignmentForm from "../components/CreateAssignment";
 import { getAuth } from "firebase/auth";
+import Loading from "../components/Loading";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -25,6 +26,8 @@ const ClassPage = () => {
   const auth = getAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [showAddStudentPopup, setShowAddStudentPopup] = useState(false);
+  const [showClassReport, setShowClassReport] = useState(false);
+  const [classReport, setClassReport] = useState<string | undefined | null>(null);
 
   useEffect(() => {
     const fetchStudent = async (studentId: string): Promise<Student | undefined> => {
@@ -182,6 +185,29 @@ const ClassPage = () => {
     return totalQuestions / students.length;
   };
 
+  const generateClassReport = async () => {
+    try {
+      const classAvg = calculateClassAverage();
+      setClassReport(undefined);
+      const response = await fetch(`http://localhost:5000/generate_class_report/${classId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          class_avg: classAvg
+        })
+      })
+      if(!response.ok) {
+        throw new Error("Network error" + response.statusText);
+      }
+      const result = await response.json();
+      setClassReport(result['Report']);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const chartData = {
     labels: ['Student', 'Class Average'],
     datasets: [
@@ -233,6 +259,7 @@ const ClassPage = () => {
           <h2 className="teacher-actions">Teacher Actions</h2>
           <button onClick={() => setShowCreateAssignment(true)}>Create Assignment</button>
           <button onClick={() => setShowAddStudentPopup(true)}>Add Student</button>
+          <button onClick={() => setShowClassReport(true)}>Generate Class Report</button>
         </div>
         <div className="students-list">
           {filteredStudents?.map((student) => (
@@ -378,7 +405,22 @@ const ClassPage = () => {
           </div>
         </div>
       )}
-
+      {showClassReport && (
+        <div className="popup-overlay">
+          <div className="popup generate-report-popup">
+            <button onClick={generateClassReport}>Generate Class Report</button>
+            <h2>Class Report:</h2>
+            {classReport === null ? (
+              <p>No Report</p>
+            ) : classReport === undefined ? (
+              <Loading />
+            ) : (
+              <p>{classReport}</p>
+            )}
+            <button onClick={() => setShowClassReport(false)} className="close-popup">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
