@@ -79,7 +79,7 @@
   border-radius: 8px;
   width: 90%;
   max-width: 1000px;
-  max-height: 90vh;
+  max-height: 85vh;
   overflow-y: auto;
 }
 .student-details-grid {
@@ -257,4 +257,9 @@
 .popup.assignment-popup .close-popup:hover,
 .popup.add-student-popup .close-popup:hover {
   color: #343a40;
+}
+
+.largertext {
+  font-size: 24px;
+  font-weight: 500;
 }

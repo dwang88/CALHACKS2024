@@ -221,7 +221,7 @@ const ClassPage = () => {
     <div className="class-page">
       <h1 className="class-name">{specClass.name}</h1>
       <div className="search-bar">
-        <input
+              <input
           type="text"
           placeholder="Search students..."
           value={searchTerm}
@@ -235,20 +235,20 @@ const ClassPage = () => {
           <button onClick={() => setShowAddStudentPopup(true)}>Add Student</button>
         </div>
         <div className="students-list">
-          {filteredStudents?.map((student) => (
-            <div key={student.student_id} className="student-row" onClick={() => handleStudentClick(student)}>
-              <div className="student-name">{student.name}</div>
-              <div className="student-info">
-                <div>Student ID: {student.student_id}</div>
-              </div>
+          {(filteredStudents || []).map((student) => (
+          <div key={student.student_id} className="student-row" onClick={() => handleStudentClick(student)}>
+            <div className="student-name">{student.name}</div>
+            <div className="student-info">
+              <div>Student ID: {student.student_id}</div>
             </div>
-          ))}
+          </div>
+        ))}
         </div>
       </div>
       {showPopup && selectedStudent && (
         <div className="popup-overlay">
           <div className="popup">
-            <h2>{selectedStudent.name}</h2>
+            <h2>Teacher View: {selectedStudent.name}</h2>
             <div className="student-details-grid">
               <div className="classCard">
                 <h3>Struggle Score</h3>
@@ -269,28 +269,86 @@ const ClassPage = () => {
               </div>
               <div className="classCard">
                 <h3>Preferred Name</h3>
-                <p>{selectedStudent.name}</p>
+                <p className="largertext">{selectedStudent.name}</p>
               </div>
               {/* Additional Fields with Dummy Data */}
               <div className="classCard">
                 <h3>Email</h3>
-                <p>davidwang@ucsd.edu</p>
+                <p className="largertext">davidwang@ucsd.edu</p>
               </div>
               <div className="classCard">
-                <h3>Phone Number</h3>
-                <p>(530) 623 4823</p>
-              </div>
+            <h3>Quiz Attempts</h3>
+            <Bar 
+              data={{
+                labels: ['8/21 - 8/28'], // You can customize this label as needed
+                datasets: [
+                  {
+                    label: 'Attempts',
+                    data: [selectedStudent.questions.length],
+                    backgroundColor: ['rgba(75, 192, 192, 0.6)'],
+                    borderColor: ['rgba(75, 192, 192, 1)'],
+                    borderWidth: 1,
+                  },
+                ],
+              }}
+              options={{
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Attempts',
+                    },
+                  },
+                },
+                plugins: {
+                  legend: {
+                    display: false,
+                  },
+                },
+              }}
+            />
+          </div>
               <div className="classCard">
                 <h3>Enrollment Date</h3>
-                <p>2024-08-28</p>
+                <p className="largertext">2024-08-28</p>
               </div>
               <div className="classCard">
-                <h3>GPA</h3>
-                <p>3.82</p>
-              </div>
+              <h3>GPA</h3>
+              <Bar 
+                data={{
+                  labels: ['Student GPA', 'Class Average GPA'],
+                  datasets: [
+                    {
+                      label: 'GPA',
+                      data: [ 3.89, 3.52], // Replace 3.5 with the actual class average GPA if available
+                      backgroundColor: ['rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)'],
+                      borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)'],
+                      borderWidth: 1,
+                    },
+                  ],
+                }}
+                options={{
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: 'GPA',
+                      },
+                    },
+                  },
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                  },
+                }}
+              />
+            </div>
               <div className="classCard">
-                <h3>Major</h3>
-                <p>Computer Science</p>
+                <h3>Concentration</h3>
+                <p className="largertext">Mathematics</p>
               </div>
             </div>
             <div className="full-width-sections">

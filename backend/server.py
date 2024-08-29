@@ -97,7 +97,7 @@ async def process_pdf(pdf: UploadFile = File(...), student_question: str = Form(
                             ],
                         }
                     ],
-                    max_tokens=256,
+                    max_tokens=1000,
                 )
 
                 user_prompt = response.choices[0].message.content.strip()
