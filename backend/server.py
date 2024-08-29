@@ -5,7 +5,7 @@ import base64
 import openai
 import boto3
 import json
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -59,7 +59,8 @@ def clear_output_folder(output_folder):
     os.makedirs(output_folder)
 
 @app.post("/process")
-async def process_pdf(pdf: UploadFile = File(...)):
+async def process_pdf(pdf: UploadFile = File(...), student_question: str = Form(...)):
+    print(f"debug output: {student_question}")
     try:
         # Save the uploaded PDF file
         pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(pdf.filename))
@@ -115,11 +116,11 @@ async def process_pdf(pdf: UploadFile = File(...)):
                     body=json.dumps(
                         {
                             "anthropic_version": "bedrock-2023-05-31",
-                            "max_tokens": 256,
+                            "max_tokens": 1000,
                             "messages": [
                                 {
                                     "role": "user",
-                                    "content": system_prompt + " " + user_prompt
+                                    "content": system_prompt + " " + student_question + " "+ user_prompt
                                 }
                             ]
                         }
