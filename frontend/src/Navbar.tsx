@@ -40,14 +40,14 @@ const Navbar: React.FC = () => {
               <Link to="/#features">Features</Link>
             )}
           </li>
-          <li><Link to="/login">Login</Link></li>
-          {signedIn && (
-            <li><button onClick={handleSignOut}>Log Out</button></li>
+          {!signedIn && (
+            <li><Link to="/login">Login</Link></li>
           )}
-          {signedIn ? (
-            <li>{currentUser?.displayName}</li>
-          ) : (
-            <li>No User</li>
+          {signedIn && (
+            <li className="user-info">
+              <span>{currentUser?.displayName || 'No User'}</span>
+              <button onClick={handleSignOut}>Log Out</button>
+            </li>
           )}
         </ul>
       </div>

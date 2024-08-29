@@ -103,39 +103,39 @@ const ClassPage = () => {
     } catch (error) {
         console.error('Fetch error:', error);
     }
-};
+  };
 
-const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  if (!studentIdToAdd) {
-    alert('Please enter a student ID');
-    return;
-  }
-
-  try {
-    const response = await fetch(`http://127.0.0.1:5000/enroll_student/${classId}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ student_id: studentIdToAdd }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to add student');
+  const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!studentIdToAdd) {
+      alert('Please enter a student ID');
+      return;
     }
 
-    const result = await response.json();
-    alert(result.message);
-    setStudentIdToAdd('');
-    setShowAddStudentPopup(false);
-    // Refresh the class list
-    fetchClasses();
-  } catch (error) {
-    console.error('Error adding student:', error);
-    alert('Failed to add student. Please try again.');
-  }
-};
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/enroll_student/${classId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ student_id: studentIdToAdd }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add student');
+      }
+
+      const result = await response.json();
+      alert(result.message);
+      setStudentIdToAdd('');
+      setShowAddStudentPopup(false);
+      // Refresh the class list
+      fetchClasses();
+    } catch (error) {
+      console.error('Error adding student:', error);
+      alert('Failed to add student. Please try again.');
+    }
+  };
 
   const generateStudentReport = async (studentId: string) => {
     setReport(null);
@@ -268,8 +268,29 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
                 <p>{selectedStudent.student_id}</p>
               </div>
               <div className="classCard">
-                <h3>Random Shit</h3>
+                <h3>Preferred Name</h3>
                 <p>{selectedStudent.name}</p>
+              </div>
+              {/* Additional Fields with Dummy Data */}
+              <div className="classCard">
+                <h3>Email</h3>
+                <p>davidwang@ucsd.edu</p>
+              </div>
+              <div className="classCard">
+                <h3>Phone Number</h3>
+                <p>(530) 623 4823</p>
+              </div>
+              <div className="classCard">
+                <h3>Enrollment Date</h3>
+                <p>2024-08-28</p>
+              </div>
+              <div className="classCard">
+                <h3>GPA</h3>
+                <p>3.82</p>
+              </div>
+              <div className="classCard">
+                <h3>Major</h3>
+                <p>Computer Science</p>
               </div>
             </div>
             <div className="full-width-sections">
@@ -332,16 +353,16 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
       )}
       {showCreateAssignment && (
         <div className="popup-overlay">
-          <div className="popup">
+          <div className="popup assignment-popup">
             <h2>Create Assignment</h2>
             <CreateAssignmentForm classId={classId} />
-            <button onClick={() => setShowCreateAssignment(false)} className="close-popup">Close</button>
+            <button onClick={() => setShowCreateAssignment(false)} className="close-popup">×</button>
           </div>
         </div>
       )}
-        {showAddStudentPopup && (
+      {showAddStudentPopup && (
         <div className="popup-overlay">
-          <div className="popup">
+          <div className="popup add-student-popup">
             <h2>Add Student</h2>
             <form onSubmit={handleAddStudent}>
               <input
@@ -353,7 +374,7 @@ const handleAddStudent = async (event: React.FormEvent<HTMLFormElement>) => {
               />
               <button type="submit">Add</button>
             </form>
-            <button onClick={() => setShowAddStudentPopup(false)} className="close-popup">Close</button>
+            <button onClick={() => setShowAddStudentPopup(false)} className="close-popup">×</button>
           </div>
         </div>
       )}

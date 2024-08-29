@@ -6,7 +6,6 @@
     color: #333;
 }
 .content-container {
-    height: calc(100vh - 120px);
     border-radius: 8px;
     overflow: hidden;
     background-color: #fafafa;
