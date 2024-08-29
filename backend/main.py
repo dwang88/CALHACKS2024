@@ -548,16 +548,8 @@ def add_student_response():
         
         result = responses_collection.insert_one(data)
 
-        assignment_result = responses_collection.update_one(
-            {"assignment_id": assignment_id},
-            {"$set": {"completed": "true"}}
-        )
-
-        if assignment_result.modified_count <= 0:
-            return jsonify({"Error": "Did not properly set assignment completion status"}), 400
-        else:
-            return jsonify({"Message": "Question added successfully!",
-                        "Response Id": str(result.inserted_id)})
+        return jsonify({"Message": "Response added successfully!",
+                    "Response Id": str(result.inserted_id)})
     except Exception as e:
         return jsonify({"Error": str(e)}), 500
     
@@ -580,6 +572,67 @@ def update_student_answers(assignment_id):
             return jsonify({"Error": "Failed to update answers"}), 400
     except Exception as e:
         return jsonify({"Error": str(e)})
+
+@app.route('/generate_class_report/<class_id>/', methods=['PATCH'])
+def generate_class_report(class_id):
+    try:
+        api_key = os.getenv('OPENAI_API_KEY')
+        client = OpenAI(
+            api_key=api_key
+        )
+
+        data = request.get_json()
+        class_avg = data['class_avg']
+
+        class_response = classes_collection.find_one({'class_id': class_id})
+        if not class_response:
+            return jsonify({"Error": "Could not find class"}), 404
+        
+        students = class_response.get('students', [])
+        if students is None:
+            return jsonify({"Error": "No students in class"}), 404
+        
+        student_reports = []
+        for id in students:
+            student = students_collection.find_one({"student_id": id})
+            if student is None:
+                return jsonify({"Error": "Could not find student"}), 404
+            reports = student.get('report', [])
+            if len(reports) < 1:
+                continue
+            student_reports.append(reports[len(reports) - 1])
+        
+        SYS_PROMPT = """
+        You are an educational assistant that helps teachers understand how to better help their class. Given a list
+        of student reports, as well as the average number of questions asked by the class, generate a concise 4-5 sentence
+        report on the class's progress, paying specific attention to what they need to improve on. The goal of this is to
+        help the teacher understand what topics to go over, or how to improve their class. The user will provide the 
+        list of student reports and the average number of questions asked by the class.
+        """
+
+        USR_PROMPT = f"List of student reports: {student_reports}, Class average number of questions: {class_avg}"
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYS_PROMPT},
+                {"role": "user", "content": USR_PROMPT}
+            ]
+        )
+
+        class_report = completion.choices[0].message.content
+
+        result = classes_collection.update_one(
+            {"class_id": class_id},
+            {"$set": {"class_report": class_report}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"Report": class_report}), 200
+        else:
+            return jsonify({"Report": "Could not add report to class"}), 400
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 500
     
 if __name__ == '__main__':
     app.run(debug=True)

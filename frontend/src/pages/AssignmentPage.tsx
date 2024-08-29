@@ -11,7 +11,7 @@ import { InlineMath, BlockMath } from 'react-katex';
 import LoadingDots from '../components/LoadingDots'; // Import the LoadingDots component
 
 const AssignmentPage = () => {
-    const { assignmentId } = useParams<{ assignmentId: string }>();
+    const { studentId, assignmentId } = useParams<{ studentId: string, assignmentId: string }>();
     const [assignment, setAssignment] = useState<Assignment>();
     const [homeworkFiles, setHomeworkFiles] = useState<Array<{ _id: string, filename: string }>>([]);
     const [sliderPosition, setSliderPosition] = useState(50);
@@ -19,6 +19,7 @@ const AssignmentPage = () => {
     const [answerChecks, setAnswerChecks] = useState<{[key: string]: boolean}>({});
     const [isLoading, setIsLoading] = useState(false);
     const [score, setScore] = useState(0);
+    const [submitted, setSubmitted] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
     const [horizontalSliderPosition, setHorizontalSliderPosition] = useState(70);
@@ -147,13 +148,13 @@ const AssignmentPage = () => {
         
         setScore(newScore);
         
-        try {
-            await axios.put(`http://localhost:5000/update_assignment_score/${assignmentId}/`, {
-                score: newScore
-            });
-        } catch (error) {
-            console.error('Error updating score:', error);
-        }
+        // try {
+        //     await axios.put(`http://localhost:5000/update_assignment_score/${assignmentId}/`, {
+        //         score: newScore
+        //     });
+        // } catch (error) {
+        //     console.error('Error updating score:', error);
+        // }
     };
 
     const renderLatex = (text: string) => {
@@ -207,6 +208,27 @@ const AssignmentPage = () => {
         setChatInput('');
     };
 
+    const submitAssignment = async () => {
+        const response = await fetch('http://localhost:5000/add_student_response/', {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                assignment_id: assignmentId,
+                student_id: studentId,
+                answers: userAnswers,
+                checks: answerChecks,
+                score: score,
+                completed: true
+            })
+        })
+        if(!response.ok) {
+            throw new Error("Network error" + response.statusText);
+        }
+        setSubmitted(true);
+    }
+
     return (
         <div className="assignment-page">
             <div className="content-container" ref={containerRef}>
@@ -230,94 +252,101 @@ const AssignmentPage = () => {
                             )}
                         </div>
                     </div>
-                    <div className="slider" ref={sliderRef} style={{ left: `${sliderPosition}%` }}></div>
-                    <div 
-                        className="questions-section"
-                        style={{ width: `${100 - sliderPosition}%` }}
-                    >
-                        <div className="questions-content">
-                            <div className="questions-area" style={{ height: `${horizontalSliderPosition}%` }}>
-                                <div className="questions-header">
-                                    <h3 className="questions-title">Questions:</h3>
-                                    <p className="assignment-score">Score: {score.toFixed(2)}%</p>
-                                </div>
-                                {assignment?.questions.map(question => (
-                                    <div key={question._id} className="question">
-                                        <p>{question.question}</p>
-                                        {question.type === "mcq" && (
-                                            <div className="mcq-options">
-                                                {question.options.map((option, index) => (
-                                                    <div key={index} className="mcq-option">
-                                                        <label>
-                                                            <input
-                                                                type="radio"
-                                                                name={`mcqOption-${question._id}`}
-                                                                value={option}
-                                                                onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                                                                disabled={answerChecks[question._id] !== undefined}
-                                                            />
-                                                            {option}
-                                                        </label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {question.type === "frq" && (
-                                            <div className="frq-response">
-                                                <input 
-                                                    type="text" 
-                                                    id={`response-${question._id}`} 
-                                                    onChange={(e) => handleAnswerChange(question._id, e.target.value)}
-                                                    disabled={answerChecks[question._id] !== undefined}
-                                                />
-                                                <i 
-                                                    className="check-answer-icon fa-solid fa-arrow-right" 
-                                                    onClick={() => checkAnswer(question)}
-                                                    title="Check Answer"
-                                                ></i>
-                                            </div>
-                                        )}
-                                        {answerChecks[question._id] !== undefined && (
-                                            <p className={answerChecks[question._id] ? "correct-answer" : "incorrect-answer"}>
-                                                {answerChecks[question._id] ? "Correct" : "Incorrect"}
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                    {!submitted ? (
+                        <>  
+                            <div className="slider" ref={sliderRef} style={{ left: `${sliderPosition}%` }}></div>
                             <div 
-                                className="horizontal-slider" 
-                                ref={horizontalSliderRef}
-                                style={{ top: `${horizontalSliderPosition}%` }}
-                            ></div>
-                            <div className="chatbot" style={{ height: `${100 - horizontalSliderPosition}%` }}>
-                                <div className="chat-history">
-                                    {chatHistory.map((chat, index) => (
-                                        <div key={index} className={`chat-message ${chat.sender}`}>
-                                            {renderLatex(chat.message)}
+                                className="questions-section"
+                                style={{ width: `${100 - sliderPosition}%` }}
+                            >
+                                <div className="questions-content">
+                                    <div className="questions-area" style={{ height: `${horizontalSliderPosition}%` }}>
+                                        <div className="questions-header">
+                                            <h3 className="questions-title">Questions:</h3>
+                                            <p className="assignment-score">Score: {score.toFixed(2)}%</p>
                                         </div>
-                                    ))}
-                                    {isLoading && (
-                                        <div className="chat-message bot">
-                                            <LoadingDots />
+                                        {assignment?.questions.map(question => (
+                                            <div key={question._id} className="question">
+                                                <p>{question.question}</p>
+                                                {question.type === "mcq" && (
+                                                    <div className="mcq-options">
+                                                        {question.options.map((option, index) => (
+                                                            <div key={index} className="mcq-option">
+                                                                <label>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`mcqOption-${question._id}`}
+                                                                        value={option}
+                                                                        onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                                        disabled={answerChecks[question._id] !== undefined}
+                                                                    />
+                                                                    {option}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {question.type === "frq" && (
+                                                    <div className="frq-response">
+                                                        <input 
+                                                            type="text" 
+                                                            id={`response-${question._id}`} 
+                                                            onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                                                            disabled={answerChecks[question._id] !== undefined}
+                                                        />
+                                                        <i 
+                                                            className="check-answer-icon fa-solid fa-arrow-right" 
+                                                            onClick={() => checkAnswer(question)}
+                                                            title="Check Answer"
+                                                        ></i>
+                                                    </div>
+                                                )}
+                                                {answerChecks[question._id] !== undefined && (
+                                                    <p className={answerChecks[question._id] ? "correct-answer" : "incorrect-answer"}>
+                                                        {answerChecks[question._id] ? "Correct" : "Incorrect"}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div 
+                                        className="horizontal-slider" 
+                                        ref={horizontalSliderRef}
+                                        style={{ top: `${horizontalSliderPosition}%` }}
+                                    ></div>
+                                    <div className="chatbot" style={{ height: `${100 - horizontalSliderPosition}%` }}>
+                                        <div className="chat-history">
+                                            {chatHistory.map((chat, index) => (
+                                                <div key={index} className={`chat-message ${chat.sender}`}>
+                                                    {renderLatex(chat.message)}
+                                                </div>
+                                            ))}
+                                            {isLoading && (
+                                                <div className="chat-message bot">
+                                                    <LoadingDots />
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                        <div className="chat-input">
+                                            <input
+                                                type="text"
+                                                value={chatInput}
+                                                onChange={(e) => setChatInput(e.target.value)}
+                                                placeholder="Ask a question..."
+                                                disabled={isLoading}
+                                            />
+                                            <button onClick={handleChatSubmit} disabled={isLoading}>
+                                                {isLoading ? 'Sending...' : 'Send'}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="chat-input">
-                                    <input
-                                        type="text"
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        placeholder="Ask a question..."
-                                        disabled={isLoading}
-                                    />
-                                    <button onClick={handleChatSubmit} disabled={isLoading}>
-                                        {isLoading ? 'Sending...' : 'Send'}
-                                    </button>
-                                </div>
+                                <button onClick={submitAssignment}>Submit Assignment</button>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    ) : (
+                        <h1>Submitted!</h1>
+                    )}
                 </div>
             </div>
         </div>
