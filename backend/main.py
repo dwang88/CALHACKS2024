@@ -374,7 +374,7 @@ def generate_student_report(student_id):
             return jsonify({"error": "Failed to add report"}), 400
 
     except Exception as e:
-        return jsonify({"Error": str(e)})
+        return jsonify({"Error": str(e)}), 500
 
 @app.route('/get_questions/<student_id>/', methods=['GET'])
 def get_questions(student_id):
@@ -579,7 +579,72 @@ def update_student_answers(assignment_id):
         else:
             return jsonify({"Error": "Failed to update answers"}), 400
     except Exception as e:
-        return jsonify({"Error": str(e)})
-    
+        return jsonify({"Error": str(e)}), 500
+
+@app.route('/generate_class_report/<class_id>/', methods=['PATCH'])
+def generate_class_report(class_id):
+    try:
+        data = request.get_json()
+        class_avg = data.get('class_avg')
+
+        student_reports = []
+        class_doc = classes_collection.find_one({'class_id': class_id})
+
+        if class_doc is None:
+            return jsonify({"Error": "Class not found"}), 404
+        
+        students = class_doc.get('students', [])
+        if not students:
+            return jsonify({"Error": "Could not find students in class"}), 404
+
+        for id in students:
+            student_response = students_collection.find_one({'student_id': id})
+            if student_response is None:
+                continue
+            reports = student_response.get('report', [])
+            if reports:
+                student_reports.append(reports[-1])
+
+        api_key = os.getenv('OPENAI_API_KEY')
+
+        client = OpenAI(
+            api_key=api_key
+        )
+
+        SYS_PROMPT = """
+        You will be given a list of student reports in the class. Based on those reports, as well as the class average number
+        of questions asked, generate a concise 4-5 sentence report for the entire class's progress. 
+        The goal is to help the teacher understand what they can improve with their teaching. 
+        Take into account what everyone is struggling with.
+        The user will provide the student reports and the average number of questions asked by the class. For example, if
+        the class is asking a lot of questions on average, this is of importance to the teacher.
+        """
+
+        USR_PROMPT = f"""
+        Class Average Number of Questions Asked: {class_avg}
+        List of Student Reports: {student_reports}
+        """
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYS_PROMPT},
+                {"role": "user", "content": USR_PROMPT}
+            ]
+        )
+
+        class_report = completion.choices[0].message.content
+
+        result = classes_collection.update_one(
+            {"class_id": class_id},
+            {"$set": {"class_report": class_report}}
+        )
+        if result.modified_count > 0:
+            return jsonify({"Report": class_report}), 200
+        else:
+            return jsonify({"Report": "unable to add report to class"}), 400
+    except Exception as e:
+        return jsonify({"Error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
