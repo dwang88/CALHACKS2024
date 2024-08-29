@@ -7,7 +7,7 @@ import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
 const AssignmentSelection = () => {
-  const { classId } = useParams<{ classId: string }>();
+  const { studentId, classId } = useParams<{ studentId: string, classId: string }>();
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null); // Declare pdfFile in state
@@ -67,7 +67,7 @@ const AssignmentSelection = () => {
   };
 
   const handleAssignmentNavigate = (assignmentId: string) => {
-    navigate(`/student/assignment/${assignmentId}`);
+    navigate(`/student/${studentId}/assignment/${assignmentId}`);
   }
 
   const renderLatex = (text: string) => {

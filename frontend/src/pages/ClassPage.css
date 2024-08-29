@@ -183,7 +183,8 @@
 }
 
 .popup.assignment-popup,
-.popup.add-student-popup {
+.popup.add-student-popup,
+.popup.generate-report-popup {
   background-color: #f8f9fa;
   border-radius: 12px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
