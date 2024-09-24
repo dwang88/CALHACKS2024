@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.6.0",
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@react-pdf-viewer/toolbar": "^3.12.0",
@@ -18,7 +19,6 @@
     "firebase": "^10.12.2",
     "font-awesome": "^4.7.0",
     "katex": "^0.16.11",
-    "font-awesome": "^4.7.0",
     "node-fetch": "^3.3.2",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.3.1",
@@ -36,7 +36,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:8000",
   "eslintConfig": {
     "extends": [
       "react-app",
