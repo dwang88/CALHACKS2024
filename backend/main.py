@@ -13,7 +13,7 @@ import json
 from openai import OpenAI
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../build', static_url_path='/')
 CORS(app)
 
 load_dotenv()
