@@ -14,9 +14,9 @@ from openai import OpenAI
 
 
 app = Flask(__name__, static_folder='../build', static_url_path='/')
-CORS(app)
+CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True, methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"])
 
-load_dotenv()
+load_dotenv(override=True)
 uri = os.getenv("DB_URL")
 
 client = MongoClient(uri, server_api=ServerApi('1'))
@@ -295,47 +295,78 @@ def get_assignments_of_student(student_id):
 @app.route('/generate_student_report/<student_id>/', methods=['PATCH'])
 def generate_student_report(student_id):
     try:
-        # questions_list = students_collection.find_one({'student_id': student_id})['questions']
-        api_key = os.getenv('OPENAI_API_KEY')
-
-        client = OpenAI(
-            api_key=api_key
-        )
-
-        assignment_list = students_collection.find_one({'student_id': student_id})['assignments']
+        # Get the student document
+        student = students_collection.find_one({'student_id': student_id})
+        if not student:
+            return jsonify({"Report": "Student not found"}), 404
+            
+        # Debug print
+        print(f"Student data: {student.get('name')} has {len(student.get('assignments', []))} assignments")
+        
+        # Check if assignments exist
+        if 'assignments' not in student or not student['assignments']:
+            return jsonify({"Report": "Student has no assignments"}), 200
+            
+        assignment_list = student['assignments']
+        print(f"Assignments: {assignment_list}")
+        
+        student_questions = student.get('questions', [])
         response_objs = []
 
-        if(len(assignment_list) < 1):
-            return jsonify({"Response": "Student has no assignments"})
+        if len(assignment_list) < 1:
+            return jsonify({"Report": "Student has no assignments"}), 200
+        
+        print(f"Processing {len(assignment_list)} assignments")
         
         for assignment_id in assignment_list:
+            print(f"Looking for response with student_id={student_id}, assignment_id={assignment_id}")
             student_response = responses_collection.find_one({'student_id': student_id,
-                                                             'assignment_id': assignment_id})
+                                                            'assignment_id': assignment_id})
             if student_response is None:
+                print(f"No response found for assignment {assignment_id}")
                 continue
+                
+            print(f"Found response with {len(student_response.get('checks', {}))} checks")
             
-            for key, value in student_response['checks'].items():
+            for key, value in student_response.get('checks', {}).items():
                 question_response = questions_collection.find_one({'_id': ObjectId(key)})
+                if not question_response:
+                    print(f"Question not found for ObjectId: {key}")
+                    continue
+                    
                 question = question_response['question']
                 correct_ans = question_response['correctAnswer']
+                
+                if key not in student_response.get('answers', {}):
+                    print(f"No answer for question {key}")
+                    continue
+                    
                 answer = student_response['answers'][key]
                 if value == False:
                     obj = {
                         'question': question,
                         'correct_ans': correct_ans,
                         'student_ans': answer,
-                        'score': student_response['score']
+                        'score': student_response.get('score', 0)
                     }
                     response_objs.append(obj)
-        # store student responses in student collection
         
-        # if len(questions_list) == 0:
-        #     return jsonify({"Report": "No questions were asked by the student"})
+        print(f"Found {len(response_objs)} incorrect answers")
         
-        # questions = ""
-        # for question in questions_list:
-        #     questions += question + " "
-                    
+        if len(response_objs) == 0:
+            return jsonify({"Report": "No incorrect answers found for this student"}), 200
+        
+        # Format response_objs as a JSON string for the prompt
+        import json
+        responses_json = json.dumps(response_objs)
+        
+        api_key = os.getenv('OPENAI_API_KEY')
+        print(api_key)
+
+        client = OpenAI(
+            api_key=api_key
+        )
+
         SYS_PROMPT = """You are an educational assistant that helps teachers understand what their students are struggling in.
         The user will provide a list of student response objects, where a student response object follows this format:
         {
@@ -348,6 +379,7 @@ def generate_student_report(student_id):
         generate a concise 3-4 sentence report of the student's progress based on their score as well as the
         content of the answers they got wrong. For example, if they got a question about addition wrong,
         consider why or how they may have got it wrong. The goal is to provide the teacher with a report about the student's overall progress. 
+        The goal is to provide the teacher with a report about the student's overall progress. 
         The user will provide the list of response objects.
         Report:"""
 
@@ -356,7 +388,7 @@ def generate_student_report(student_id):
             messages=[
                 {"role": "system", 
                  "content": SYS_PROMPT},
-                {"role": "user", "content": f"Student responses: {response_objs}"}
+                {"role": "user", "content": f"Student responses: {responses_json}"}
             ]
         )
 
@@ -577,6 +609,7 @@ def update_student_answers(assignment_id):
 def generate_class_report(class_id):
     try:
         api_key = os.getenv('OPENAI_API_KEY')
+        print(api_key)
         client = OpenAI(
             api_key=api_key
         )
@@ -634,5 +667,25 @@ def generate_class_report(class_id):
     except Exception as e:
         return jsonify({"Error": str(e)}), 500
     
+@app.route('/add_student_question/', methods=['POST'])
+def add_student_question():
+    try:
+        data = request.get_json()
+        student_id = data['student_id']
+        question = data['question']
+
+        result = students_collection.update_one(
+            {"student_id": student_id},
+            {"$push": {"questions": question}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"message": "Question added successfully!"}), 200
+        else:
+            return jsonify({"error": "Failed to add question."}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)

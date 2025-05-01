@@ -153,7 +153,18 @@ const ClassPage = () => {
         throw new Error('Network response was not ok ' + response.statusText);
       }
       const data = await response.json();
-      setReport(data.Report);
+      setReport(data.Report || data.Response || data.error || data.Error);
+      // Fetch updated student data to refresh past reports
+      const updatedStudentRes = await fetch(`http://127.0.0.1:5000/get_student/${studentId}/`, {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (updatedStudentRes.ok) {
+        const updatedStudentData = await updatedStudentRes.json();
+        setSelectedStudent(updatedStudentData.Student);
+      }
     } catch (error) {
       console.error(error);
       setReport("Failed to generate report");
@@ -384,8 +395,8 @@ const ClassPage = () => {
                 {selectedStudent.questions && selectedStudent.questions.length > 0 ? (
                   <div className="content-container">
                     <ol>
-                      {selectedStudent.questions.slice(0, showAllQuestions ? undefined : 3).reverse().map((q, index) => (
-                        <li key={index}>{q}</li>
+                      {selectedStudent.questions.slice(0, showAllQuestions ? undefined : 3).reverse().map((q, idx) => (
+                        <li key={q + '-' + idx}>{q}</li>
                       ))}
                     </ol>
                     {selectedStudent.questions.length > 1 && (
@@ -405,8 +416,8 @@ const ClassPage = () => {
                 {selectedStudent.report && selectedStudent.report.length > 0 ? (
                   <div className="content-container">
                     <ol>
-                      {selectedStudent.report.slice(0, showAllReports ? undefined : 1).reverse().map((r, index) => (
-                        <li key={index}>{r}</li>
+                      {selectedStudent.report.slice(0, showAllReports ? undefined : 1).reverse().map((r, idx) => (
+                        <li key={typeof r === 'string' ? r.slice(0, 20) + '-' + idx : idx}>{r}</li>
                       ))}
                     </ol>
                     {selectedStudent.report.length > 1 && (

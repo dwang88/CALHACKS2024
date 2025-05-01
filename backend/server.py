@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 import shutil
 
-load_dotenv()
+load_dotenv(override=True)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY

@@ -197,7 +197,16 @@ const AssignmentPage = () => {
                 `For ${result.image_name}:\n${result.solution_outputs.join('\n')}`
             ).join('\n\n');
             setChatHistory(prev => [...prev, { sender: 'bot', message: botMessage }]);
-    
+
+            // --- NEW: Add student question to backend ---
+            if (studentId && chatInput) {
+                await axios.post('http://localhost:5000/add_student_question/', {
+                    student_id: studentId,
+                    question: chatInput
+                });
+            }
+            // -------------------------------------------
+
         } catch (error) {
             console.error('Error processing question:', error);
             setChatHistory(prev => [...prev, { sender: 'bot', message: 'An error occurred while processing your question.' }]);
